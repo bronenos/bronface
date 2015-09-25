@@ -7,10 +7,10 @@
 
 typedef struct {
 	MainWindow *window;
-} Logic_t;
+} Logic;
 
 
 void logic_reset();
-Logic_t *logic();
+Logic *logic();
 
 #endif

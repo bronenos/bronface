@@ -13,6 +13,17 @@
     "dummy": 0
   },
   "resources": {
-    "media": []
+    "media": [
+    {
+      "type": "png",
+      "name": "dash_long",
+      "file": "dash_long.png"
+    },
+    {
+      "type": "png",
+      "name": "dash_short",
+      "file": "dash_short.png"
+    }
+    ]
   }
 }

@@ -1,7 +1,7 @@
 #include "logic.h"
 
 
-static Logic_t g_logic;
+static Logic g_logic;
 
 
 void logic_reset() {
@@ -9,6 +9,6 @@ void logic_reset() {
 }
 
 
-Logic_t *logic() {
+Logic *logic() {
 	return &g_logic;
 }
