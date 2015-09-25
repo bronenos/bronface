@@ -7,13 +7,7 @@ static void handle_window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 	const GRect window_bounds = layer_get_bounds(window_layer);
 
-	GRect rect = window_bounds;
-	rect.origin.x += 10;
-	rect.origin.y += 10;
-	rect.size.w -= rect.origin.x * 2.0f;
-	rect.size.h -= rect.origin.y * 2.0f;
-
-	logic()->window->face_layer = ui_face_layer_create(rect);
+	logic()->window->face_layer = ui_face_layer_create(window_bounds);
 	layer_add_child(window_layer, logic()->window->face_layer->back);
 }
 
