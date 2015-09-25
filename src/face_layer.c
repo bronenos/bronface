@@ -11,7 +11,6 @@ static GPath *ui_face_layer_build_hour_path(bool is_long) {
 	GPoint *p = points;
 
 	int16_t offset, width, height;
-
 	if (is_long) {
 		offset = 6;
 		width = 3;
@@ -43,8 +42,8 @@ static void ui_face_layer_transform_hour_path(GPoint center_point, GPath *path, 
 	move_point.x = center_point.x + (path_dist_y * sin_lookup(angle) / TRIG_MAX_RATIO);
 	move_point.y = center_point.y + (path_dist_y * -cos_lookup(angle) / TRIG_MAX_RATIO);
 
-	gpath_rotate_to(path, angle);
 	gpath_move_to(path, move_point);
+	gpath_rotate_to(path, angle);
 }
 
 
