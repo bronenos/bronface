@@ -11,7 +11,9 @@ typedef struct {
 	GBitmap *dash_short_bitmap;
 	GBitmap *hand_hour_bitmap;
 	GBitmap *hand_minute_bitmap;
-	struct tm last_tm;
+
+	bool has_time;
+	struct tm last_time;
 } FaceLayer;
 
 

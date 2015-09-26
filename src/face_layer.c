@@ -69,19 +69,22 @@ static void ui_face_layer_update(Layer *layer, GContext *ctx) {
 		}
 	}
 
-	const int16_t hour_angle = TRIG_MAX_ANGLE * face_layer->last_tm.tm_hour / kFaceLayerHoursCount;
-	anchor_point = ui_face_layer_anchor_point(face_layer->hand_hour_bitmap, FaceLayerAnchorModeHandHour);
-	graphics_draw_rotated_bitmap(ctx, face_layer->hand_hour_bitmap, anchor_point, hour_angle, center_point);
+	if (face_layer->has_time) {
+		const int16_t hour_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_hour / kFaceLayerHoursCount;
+		anchor_point = ui_face_layer_anchor_point(face_layer->hand_hour_bitmap, FaceLayerAnchorModeHandHour);
+		graphics_draw_rotated_bitmap(ctx, face_layer->hand_hour_bitmap, anchor_point, hour_angle, center_point);
 
-	const int16_t minute_angle = TRIG_MAX_ANGLE * face_layer->last_tm.tm_min / kFaceLayerMinutesCount;
-	anchor_point = ui_face_layer_anchor_point(face_layer->hand_minute_bitmap, FaceLayerAnchorModeHandMinute);
-	graphics_draw_rotated_bitmap(ctx, face_layer->hand_minute_bitmap, anchor_point, minute_angle, center_point);
+		const int16_t minute_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_min / kFaceLayerMinutesCount;
+		anchor_point = ui_face_layer_anchor_point(face_layer->hand_minute_bitmap, FaceLayerAnchorModeHandMinute);
+		graphics_draw_rotated_bitmap(ctx, face_layer->hand_minute_bitmap, anchor_point, minute_angle, center_point);
+	}
 }
 
 
 static FaceLayer *g_face_layer;
 static void handle_minute_tick(struct tm *time, TimeUnits changed_units) {
-	g_face_layer->last_tm = *time;
+	g_face_layer->last_time = *time;
+	g_face_layer->has_time = true;
 	layer_mark_dirty(g_face_layer->back_layer);
 }
 
