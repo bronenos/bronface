@@ -5,13 +5,8 @@
 #include "face_layer.h"
 
 
-typedef struct {
-	Window *window;
-	FaceLayer *face_layer;
-} MainScene;
-
-
-MainScene *ui_main_scene_create();
-void ui_main_scene_destroy(MainScene *window);
+struct MainScene *ui_main_scene_create();
+Window *ui_main_scene_get_window(struct MainScene *main_scene);
+void ui_main_scene_destroy(struct MainScene *main_scene);
 
 #endif

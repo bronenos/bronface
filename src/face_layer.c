@@ -2,6 +2,19 @@
 #include "face_layer.h"
 
 
+struct FaceLayer {
+	Layer *back_layer;
+
+	GBitmap *dash_long_bitmap;
+	GBitmap *dash_short_bitmap;
+	GBitmap *hand_hour_bitmap;
+	GBitmap *hand_minute_bitmap;
+
+	bool has_time;
+	struct tm last_time;
+};
+
+
 const int kFaceLayerHoursCount		= 12;
 const int kFaceLayerMinutesCount	= 60;
 
@@ -37,7 +50,7 @@ static GPoint ui_face_layer_anchor_point(GBitmap *bitmap, FaceLayerAnchorMode mo
 
 
 static void ui_face_layer_update(Layer *layer, GContext *ctx) {
-	FaceLayer *face_layer = (FaceLayer *) layer_get_data(layer);
+	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
 	const GRect layer_bounds = layer_get_bounds(layer);
 
 	// fill with black color
@@ -81,7 +94,7 @@ static void ui_face_layer_update(Layer *layer, GContext *ctx) {
 }
 
 
-static FaceLayer *g_face_layer;
+static struct FaceLayer *g_face_layer;
 static void handle_minute_tick(struct tm *time, TimeUnits changed_units) {
 	g_face_layer->last_time = *time;
 	g_face_layer->has_time = true;
@@ -89,11 +102,11 @@ static void handle_minute_tick(struct tm *time, TimeUnits changed_units) {
 }
 
 
-FaceLayer *ui_face_layer_create(GRect rect) {
-	Layer *layer = layer_create_with_data(rect, sizeof(FaceLayer));
+struct FaceLayer *ui_face_layer_create(GRect rect) {
+	Layer *layer = layer_create_with_data(rect, sizeof(struct FaceLayer));
 	layer_set_update_proc(layer, ui_face_layer_update);
 
-	FaceLayer *face_layer = (FaceLayer *) layer_get_data(layer);
+	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
 	face_layer->back_layer = layer;
 	face_layer->dash_long_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_LONG);
 	face_layer->dash_short_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_SHORT);
@@ -107,7 +120,12 @@ FaceLayer *ui_face_layer_create(GRect rect) {
 }
 
 
-void ui_face_layer_destroy(FaceLayer *face_layer) {
+Layer *ui_face_layer_get_layer(struct FaceLayer *face_layer) {
+	return face_layer->back_layer;
+}
+
+
+void ui_face_layer_destroy(struct FaceLayer *face_layer) {
 	tick_timer_service_unsubscribe();
 	layer_destroy(face_layer->back_layer);
 	gbitmap_destroy(face_layer->dash_long_bitmap);

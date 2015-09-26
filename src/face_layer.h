@@ -3,21 +3,11 @@
 
 #include <pebble.h>
 
-
-typedef struct {
-	Layer *back_layer;
-
-	GBitmap *dash_long_bitmap;
-	GBitmap *dash_short_bitmap;
-	GBitmap *hand_hour_bitmap;
-	GBitmap *hand_minute_bitmap;
-
-	bool has_time;
-	struct tm last_time;
-} FaceLayer;
+struct FaceLayer;
 
 
-FaceLayer *ui_face_layer_create(GRect rect);
-void ui_face_layer_destroy(FaceLayer *layer);
+struct FaceLayer *ui_face_layer_create(GRect rect);
+Layer *ui_face_layer_get_layer(struct FaceLayer *face_layer);
+void ui_face_layer_destroy(struct FaceLayer *face_layer);
 
 #endif

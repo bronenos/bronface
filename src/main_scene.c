@@ -2,24 +2,30 @@
 #include "face_layer.h"
 
 
+struct MainScene {
+	Window *window;
+	struct FaceLayer *face_layer;
+};
+
+
 static void handle_window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 	const GRect window_bounds = layer_get_bounds(window_layer);
 
-	MainScene *main_scene = (MainScene *) window_get_user_data(window);
+	struct MainScene *main_scene = (struct MainScene *) window_get_user_data(window);
 	main_scene->face_layer = ui_face_layer_create(window_bounds);
-	layer_add_child(window_layer, main_scene->face_layer->back_layer);
+	layer_add_child(window_layer, ui_face_layer_get_layer(main_scene->face_layer));
 }
 
 
 static void handle_window_unload(Window *window) {
-	MainScene *main_scene = (MainScene *) window_get_user_data(window);
+	struct MainScene *main_scene = (struct MainScene *) window_get_user_data(window);
 	ui_face_layer_destroy(main_scene->face_layer);
 }
 
 
-MainScene *ui_main_scene_create() {
-	MainScene *main_scene = (MainScene *) malloc(sizeof(MainScene));
+struct MainScene *ui_main_scene_create() {
+	struct MainScene *main_scene = (struct MainScene *) malloc(sizeof(struct MainScene));
 	main_scene->window = window_create();
 	window_set_user_data(main_scene->window, main_scene);
 
@@ -32,7 +38,12 @@ MainScene *ui_main_scene_create() {
 }
 
 
-void ui_main_scene_destroy(MainScene *main_scene) {
+Window *ui_main_scene_get_window(struct MainScene *main_scene) {
+	return main_scene->window;
+}
+
+
+void ui_main_scene_destroy(struct MainScene *main_scene) {
 	window_destroy(main_scene->window);
 	free(main_scene);
 }

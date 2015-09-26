@@ -3,20 +3,20 @@
 #include "face_layer.h"
 
 
-static MainScene *init() {
-  MainScene *main_scene = ui_main_scene_create();
-  window_stack_push(main_scene->window, true);
+static struct MainScene *init() {
+  struct MainScene *main_scene = ui_main_scene_create();
+  window_stack_push(ui_main_scene_get_window(main_scene), true);
   return main_scene;
 }
 
 
-static void deinit(MainScene *main_scene) {
+static void deinit(struct MainScene *main_scene) {
   ui_main_scene_destroy(main_scene);
 }
 
 
 int main(void) {
-  MainScene *main_scene = init();
+  struct MainScene *main_scene = init();
   app_event_loop();
   deinit(main_scene);
   return 0;
