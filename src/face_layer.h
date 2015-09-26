@@ -5,7 +5,12 @@
 
 
 typedef struct {
-	Layer *back;
+	Layer *back_layer;
+
+	GBitmap *dash_long_bitmap;
+	GBitmap *dash_short_bitmap;
+	GBitmap *hand_hour_bitmap;
+	GBitmap *hand_minute_bitmap;
 } FaceLayer;
 
 

@@ -1,92 +1,106 @@
 #include <pebble.h>
 #include "face_layer.h"
-#include "logic.h"
 
 
 const int kFaceLayerHoursCount	= 12;
 
 
-static GPath *ui_face_layer_build_hour_path(bool is_long) {
-	GPoint *points = (GPoint *) malloc(4 * sizeof(GPoint));
-	GPoint *p = points;
+typedef enum {
+	FaceLayerAnchorModeDashLong,
+	FaceLayerAnchorModeDashShort,
+	FaceLayerAnchorModeHandHour,
+	FaceLayerAnchorModeHandMinute,
+} FaceLayerAnchorMode;
 
-	int16_t offset, width, height;
-	if (is_long) {
-		offset = 6;
-		width = 3;
-		height = 16;
+
+static GPoint ui_face_layer_anchor_point(GBitmap *bitmap, FaceLayerAnchorMode mode) {
+	GPoint point = GPointZero;
+	const GSize bitmap_size = gbitmap_get_bounds(bitmap).size;
+
+	switch (mode) {
+	case FaceLayerAnchorModeDashLong:
+	case FaceLayerAnchorModeDashShort:
+		point.x = bitmap_size.w / 2;
+		point.y = 0;
+		break;
+
+	case FaceLayerAnchorModeHandHour:
+	case FaceLayerAnchorModeHandMinute:
+		point.x = bitmap_size.w / 2;
+		point.y = bitmap_size.h;
+		break;
 	}
-	else {
-		offset = 6;
-		width = 3;
-		height = 12;
-	}
 
-	*p++ = GPoint(-width, offset);
-	*p++ = GPoint(width, offset);
-	*p++ = GPoint(width, height);
-	*p++ = GPoint(-width, height);
-
-	GPathInfo path_info;
-	path_info.num_points = 4;
-	path_info.points = points;
-
-  	return gpath_create(&path_info);
-}
-
-
-static void ui_face_layer_transform_hour_path(GPoint center_point, GPath *path, int16_t angle) {
-	const int16_t path_dist_y = center_point.y - path->points[1].y;
-
-	GPoint move_point;
-	move_point.x = center_point.x + (path_dist_y * sin_lookup(angle) / TRIG_MAX_RATIO);
-	move_point.y = center_point.y + (path_dist_y * -cos_lookup(angle) / TRIG_MAX_RATIO);
-
-	gpath_move_to(path, move_point);
-	gpath_rotate_to(path, angle);
+	return point;
 }
 
 
 static void ui_face_layer_update(Layer *layer, GContext *ctx) {
-  const GRect layer_bounds = layer_get_bounds(layer);
+	FaceLayer *face_layer = (FaceLayer *) layer_get_data(layer);
+	const GRect layer_bounds = layer_get_bounds(layer);
+
+	// fill with black color
+	graphics_context_set_fill_color(ctx, GColorBlack);
+	graphics_fill_rect(ctx, layer_bounds, 0, GCornerNone);
+
+	// draw hours
+	graphics_context_set_fill_color(ctx, GColorWhite);
+
+	GPoint center_point;
+	center_point.x = layer_bounds.size.w / 2;
+	center_point.y = layer_bounds.size.h / 2;
+
+	for (int16_t i=0; i<kFaceLayerHoursCount; i++) {
+		const int16_t angle = TRIG_MAX_ANGLE * i / kFaceLayerHoursCount;
+		const bool is_third_hour = (i % 3 == 0);
+
+		GPoint round_point, anchor_point;
+		round_point.x = center_point.x + (center_point.x * sin_lookup(angle) / TRIG_MAX_RATIO);
+		round_point.y = center_point.y + (center_point.y * -cos_lookup(angle) / TRIG_MAX_RATIO);
+
+		if (is_third_hour) {
+			anchor_point = ui_face_layer_anchor_point(face_layer->dash_long_bitmap, FaceLayerAnchorModeDashLong);
+			graphics_draw_rotated_bitmap(ctx, face_layer->dash_long_bitmap, anchor_point, angle, round_point);
+		}
+		else {
+			anchor_point = ui_face_layer_anchor_point(face_layer->dash_short_bitmap, FaceLayerAnchorModeDashShort);
+			graphics_draw_rotated_bitmap(ctx, face_layer->dash_short_bitmap, anchor_point, angle, round_point);
+		}
+
+		if (i == 4) {
+			const GPoint anchor_point = GPoint(gbitmap_get_bounds(face_layer->hand_hour_bitmap).size.w / 2, gbitmap_get_bounds(face_layer->hand_hour_bitmap).size.h);
+			graphics_draw_rotated_bitmap(ctx, face_layer->hand_hour_bitmap, anchor_point, angle, center_point);
+		}
+		else if (i == 8) {
+			const GPoint anchor_point = GPoint(gbitmap_get_bounds(face_layer->hand_minute_bitmap).size.w / 2, gbitmap_get_bounds(face_layer->hand_minute_bitmap).size.h);
+			graphics_draw_rotated_bitmap(ctx, face_layer->hand_minute_bitmap, anchor_point, angle, center_point);
+		}
+	}
 
 
-  // fill with black color
-  graphics_context_set_fill_color(ctx, GColorBlack);
-  graphics_fill_rect(ctx, layer_bounds, 0, GCornerNone);
-
-
-  // draw hours
-  graphics_context_set_fill_color(ctx, GColorWhite);
-
-  GPoint center_point;
-  center_point.x = layer_bounds.size.w / 2;
-  center_point.y = layer_bounds.size.h / 2;
-
-  for (int16_t i=0; i<kFaceLayerHoursCount; i++) {
-  	const int16_t angle = TRIG_MAX_ANGLE * i / kFaceLayerHoursCount;
-  	const bool is_third_hour = (i % 3 == 0);
-
-  	GPath *path = ui_face_layer_build_hour_path(is_third_hour);
-  	ui_face_layer_transform_hour_path(center_point, path, angle);
-  	gpath_draw_filled(ctx, path);
-  	gpath_destroy(path);
-  	free(path->points);
-  }
 }
 
 
 FaceLayer *ui_face_layer_create(GRect rect) {
-	FaceLayer *face_layer = (FaceLayer *) calloc(1, sizeof(FaceLayer));
+	Layer *layer = layer_create_with_data(rect, sizeof(FaceLayer));
+	layer_set_update_proc(layer, ui_face_layer_update);
 
-	face_layer->back = layer_create(rect);
-	layer_set_update_proc(face_layer->back, ui_face_layer_update);
+	FaceLayer *face_layer = (FaceLayer *) layer_get_data(layer);
+	face_layer->back_layer = layer;
+	face_layer->dash_long_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_LONG);
+	face_layer->dash_short_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_SHORT);
+	face_layer->hand_hour_bitmap = gbitmap_create_with_resource(RESOURCE_ID_HAND_HOUR);
+	face_layer->hand_minute_bitmap = gbitmap_create_with_resource(RESOURCE_ID_HAND_MINUTE);
 
 	return face_layer;
 }
 
 
 void ui_face_layer_destroy(FaceLayer *layer) {
-	layer_destroy(layer->back);
+	layer_destroy(layer->back_layer);
+	gbitmap_destroy(layer->dash_long_bitmap);
+	gbitmap_destroy(layer->dash_short_bitmap);
+	gbitmap_destroy(layer->hand_hour_bitmap);
+	gbitmap_destroy(layer->hand_minute_bitmap);
 	free(layer);
 }

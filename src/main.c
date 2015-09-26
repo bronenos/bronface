@@ -1,25 +1,23 @@
 #include <pebble.h>
-#include "main_window.h"
+#include "main_scene.h"
 #include "face_layer.h"
-#include "logic.h"
 
 
-static void init() {
-  logic_reset();
-
-  logic()->window = ui_main_window_create();
-  window_stack_push(logic()->window->window, true);
+static MainScene *init() {
+  MainScene *main_scene = ui_main_scene_create();
+  window_stack_push(main_scene->window, true);
+  return main_scene;
 }
 
 
-static void deinit() {
-  ui_main_window_destroy(logic()->window);
+static void deinit(MainScene *main_scene) {
+  ui_main_scene_destroy(main_scene);
 }
 
 
 int main(void) {
-  init();
+  MainScene *main_scene = init();
   app_event_loop();
-  deinit();
+  deinit(main_scene);
   return 0;
 }
