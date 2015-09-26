@@ -2,7 +2,7 @@
 #define COMMON_H
 
 enum PersistDataKey {
-	PersistDataKeyMode
+	PersistDataKeyWatchfaceMode
 };
 
 #endif

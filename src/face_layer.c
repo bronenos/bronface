@@ -169,7 +169,7 @@ static void handle_select_event(void *listener, void *object) {
 		break;
 	}
 
-	persist_write_int(PersistDataKeyMode, face_layer->mode);
+	persist_write_int(PersistDataKeyWatchfaceMode, face_layer->mode);
 
 	layer_mark_dirty(face_layer->back_layer);
 }
@@ -188,8 +188,8 @@ struct FaceLayer *ui_face_layer_create(GRect rect) {
 
 	face_layer->has_time = false;
 
-	if (persist_exists(PersistDataKeyMode)) {
-		face_layer->mode = persist_read_int(PersistDataKeyMode);
+	if (persist_exists(PersistDataKeyWatchfaceMode)) {
+		face_layer->mode = persist_read_int(PersistDataKeyWatchfaceMode);
 	}
 	else {
 		face_layer->mode = FaceLayerModeHandsWithAllDashes;
