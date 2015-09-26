@@ -3,12 +3,14 @@
 #include "informer.h"
 
 
+// types
 struct MainScene {
 	Window *window;
 	struct FaceLayer *face_layer;
 };
 
 
+// window handlers
 static void handle_window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 	const GRect window_bounds = layer_get_bounds(window_layer);
@@ -25,11 +27,13 @@ static void handle_window_unload(Window *window) {
 }
 
 
+// tick handler
 static void handle_minute_tick(struct tm *time, TimeUnits changed_units) {
 	informer_inform_with_object(InformerEventMinuteTimer, time);
 }
 
 
+// click handlers
 static void handle_select_click(ClickRecognizerRef recognizer, void *context) {
 	informer_inform_with_object(InformerEventSelectClick, context);
 }
@@ -40,6 +44,7 @@ static void click_config_provider(void *context) {
 }
 
 
+// core
 struct MainScene *ui_main_scene_create() {
 	struct MainScene *main_scene = (struct MainScene *) malloc(sizeof(struct MainScene));
 

@@ -4,6 +4,7 @@
 #include "informer.h"
 
 
+// types
 enum FaceLayerMode {
 	FaceLayerModeHandsOnly,
 	FaceLayerModeHandsWithMainDashes,
@@ -26,10 +27,6 @@ struct FaceLayer {
 };
 
 
-const int kFaceLayerHoursCount		= 12;
-const int kFaceLayerMinutesCount	= 60;
-
-
 typedef enum {
 	FaceLayerAnchorModeDashLong,
 	FaceLayerAnchorModeDashShort,
@@ -38,6 +35,11 @@ typedef enum {
 } FaceLayerAnchorMode;
 
 
+const int kFaceLayerHoursCount		= 12;
+const int kFaceLayerMinutesCount	= 60;
+
+
+// internal
 static GPoint ui_face_layer_anchor_point(GBitmap *bitmap, FaceLayerAnchorMode mode) {
 	GPoint point = GPointZero;
 	const GSize bitmap_size = gbitmap_get_bounds(bitmap).size;
@@ -60,6 +62,7 @@ static GPoint ui_face_layer_anchor_point(GBitmap *bitmap, FaceLayerAnchorMode mo
 }
 
 
+// drawing
 static void draw_background(struct FaceLayer *face_layer, GContext *ctx) {
 	const GRect layer_bounds = layer_get_bounds(face_layer->back_layer);
 
@@ -141,6 +144,7 @@ static void ui_face_layer_update(Layer *layer, GContext *ctx) {
 }
 
 
+// informer handlers
 static void handle_minute_event(void *listener, void *object) {
 	struct FaceLayer *face_layer = (struct FaceLayer *) listener;
 	struct tm *time = (struct tm *) object;
@@ -175,6 +179,7 @@ static void handle_select_event(void *listener, void *object) {
 }
 
 
+// core
 struct FaceLayer *ui_face_layer_create(GRect rect) {
 	Layer *layer = layer_create_with_data(rect, sizeof(struct FaceLayer));
 	layer_set_update_proc(layer, ui_face_layer_update);
