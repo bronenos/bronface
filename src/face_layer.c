@@ -74,8 +74,7 @@ static void face_layer_get_bounds_and_center(struct FaceLayer *face_layer, GRect
 	*bounds = layer_get_bounds(face_layer->back_layer);
 
 	if (center) {
-		center->x = bounds->size.w * 0.5;
-		center->y = bounds->size.h * 0.5;
+		*center = grect_center_point(bounds);
 	}
 }
 
@@ -128,7 +127,7 @@ static void draw_dashes(struct FaceLayer *face_layer, GContext *ctx) {
 		GPoint center;
 		face_layer_get_bounds_and_center(face_layer, &bounds, &center);
 
-		graphics_context_set_stroke_color(ctx, GColorWhite);
+		graphics_context_set_stroke_color(ctx, GColorLightGray);
 
 		for (int16_t i=0; i<kFaceLayerDashesCount; i++) {
 			const int16_t angle = TRIG_MAX_ANGLE * i / kFaceLayerHoursCount;
@@ -169,33 +168,44 @@ static void draw_hands(struct FaceLayer *face_layer, GContext *ctx) {
 	// second
 	if (face_layer->seconds_active) {
 		const int16_t second_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_sec / kFaceLayerSecondsCount;
-		const GPoint second_point = face_layer_second_point_for_rotation(center, 80, second_angle);
+		const GPoint second_point = face_layer_second_point_for_rotation(center, 65, second_angle);
 
-		graphics_context_set_stroke_color(ctx, GColorWhite);
+		graphics_context_set_stroke_color(ctx, GColorLightGray);
 		graphics_context_set_stroke_width(ctx, 1);
 		graphics_draw_line(ctx, center, second_point);
 	}
 
 	// minute
 	const int16_t minute_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_min / kFaceLayerMinutesCount;
-	const GPoint minute_long_point = face_layer_second_point_for_rotation(center, 65, minute_angle);
-	const GPoint minute_short_point = face_layer_second_point_for_rotation(center, 64, minute_angle);
+	const GPoint minute_outer_point = face_layer_second_point_for_rotation(center, 50, minute_angle);
+	const GPoint minute_outer_hole_point = face_layer_second_point_for_rotation(center, 49, minute_angle);
+	const GPoint minute_inner_point = face_layer_second_point_for_rotation(center, 14, minute_angle);
+	const GPoint minute_inner_hole_point = face_layer_second_point_for_rotation(center, 15, minute_angle);
+
+	graphics_context_set_stroke_color(ctx, GColorWhite);
+	graphics_context_set_stroke_width(ctx, 2);
+	graphics_draw_line(ctx, center, minute_outer_point);
 
 	graphics_context_set_stroke_color(ctx, GColorWhite);
 	graphics_context_set_stroke_width(ctx, 7);
-	graphics_draw_line(ctx, center, minute_long_point);
+	graphics_draw_line(ctx, minute_inner_point, minute_outer_point);
 
 	graphics_context_set_stroke_color(ctx, GColorBlack);
 	graphics_context_set_stroke_width(ctx, 3);
-	graphics_draw_line(ctx, center, minute_short_point);
+	graphics_draw_line(ctx, minute_inner_hole_point, minute_outer_hole_point);
 
 	// hour
 	const int16_t hour_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_hour / kFaceLayerHoursCount;
-	const GPoint hour_point = face_layer_second_point_for_rotation(center, 40, hour_angle);
+	const GPoint hour_outer_point = face_layer_second_point_for_rotation(center, 40, hour_angle);
+	const GPoint hour_inner_point = face_layer_second_point_for_rotation(center, 14, hour_angle);
 
 	graphics_context_set_stroke_color(ctx, GColorWhite);
-	graphics_context_set_stroke_width(ctx, 5);
-	graphics_draw_line(ctx, center, hour_point);
+	graphics_context_set_stroke_width(ctx, 2);
+	graphics_draw_line(ctx, center, hour_outer_point);
+
+	graphics_context_set_stroke_color(ctx, GColorWhite);
+	graphics_context_set_stroke_width(ctx, 6);
+	graphics_draw_line(ctx, hour_inner_point, hour_outer_point);
 }
 
 
