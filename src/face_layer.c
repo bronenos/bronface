@@ -2,7 +2,6 @@
 #include "face_layer.h"
 #include "common.h"
 #include "informer.h"
-#include "antialiasing.h"
 
 
 // types
