@@ -3,7 +3,8 @@
 
 // types
 enum PersistDataKey {
-	PersistDataKeyWatchfaceMode
+	PersistDataKeyWatchfaceMode,
+	PersistDataKeySecondsActive,
 };
 
 #endif

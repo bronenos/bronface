@@ -6,10 +6,12 @@
 
 
 // types
-enum FaceLayerMode {
-	FaceLayerModeHandsOnly,
-	FaceLayerModeHandsWithMainDashes,
-	FaceLayerModeHandsWithAllDashes,
+enum FaceLayerDashesMode {
+	FaceLayerDashesModeNone,
+	FaceLayerDashesModeMain,
+	FaceLayerDashesModeAll,
+	FaceLayerDashesMode_First = FaceLayerDashesModeNone,
+	FaceLayerDashesMode_Last = FaceLayerDashesModeAll,
 };
 
 
@@ -24,7 +26,8 @@ struct FaceLayer {
 	bool has_time;
 	struct tm last_time;
 
-	enum FaceLayerMode mode;
+	enum FaceLayerDashesMode dashes_mode;
+	bool seconds_active;
 };
 
 
@@ -36,39 +39,122 @@ typedef enum {
 } FaceLayerAnchorMode;
 
 
-const int kFaceLayerHoursCount		= 12;
-const int kFaceLayerMinutesCount	= 60;
+// config
+const int16_t	kFaceLayerDashesCount		= 60;
+const int16_t	kFaceLayerHoursCount		= 12;
+const int16_t	kFaceLayerMinutesCount		= 60;
+const int16_t	kFaceLayerSecondsCount		= 60;
+
+const GSize		kFaceLayerMainDashSize		= { .w = 5, .h = 15 };
+const GSize		kFaceLayerHourDashSize		= { .w = 2, .h = 7 };
+const GSize		kFaceLayerMinuteDashSize	= { .w = 1, .h = 5 };
+
+
+// forward
+static void subscribe_for_tick(struct FaceLayer *face_layer);
+static void handle_minute_tick(struct tm *time, TimeUnits changed_units);
 
 
 // internal
-static GPoint face_layer_anchor_point(GBitmap *bitmap, FaceLayerAnchorMode mode) {
-	GPoint point = GPointZero;
-	const GSize bitmap_size = gbitmap_get_bounds(bitmap).size;
+static void face_layer_update_mode(struct FaceLayer *face_layer) {
+	persist_write_int(PersistDataKeyWatchfaceMode, face_layer->dashes_mode);
 
-	switch (mode) {
-	case FaceLayerAnchorModeDashLong:
-	case FaceLayerAnchorModeDashShort:
-		point.x = bitmap_size.w / 2;
-		point.y = 0;
-		break;
+	layer_mark_dirty(face_layer->back_layer);
+}
 
-	case FaceLayerAnchorModeHandHour:
-	case FaceLayerAnchorModeHandMinute:
-		point.x = bitmap_size.w / 2;
-		point.y = bitmap_size.h;
-		break;
+
+static void face_layer_update_seconds_active(struct FaceLayer *face_layer) {
+	persist_write_bool(PersistDataKeySecondsActive, face_layer->seconds_active);
+
+	tick_timer_service_unsubscribe();
+	subscribe_for_tick(face_layer);
+}
+
+
+static void face_layer_get_bounds_and_center(struct FaceLayer *face_layer, GRect *bounds, GPoint *center) {
+	*bounds = layer_get_bounds(face_layer->back_layer);
+
+	if (center) {
+		center->x = bounds->size.w * 0.5;
+		center->y = bounds->size.h * 0.5;
 	}
+}
 
+
+static GPoint face_layer_second_point_for_rotation(GPoint center, int16_t length, int16_t angle) {
+	GPoint point;
+	point.x = center.x + (length * sin_lookup(angle) / TRIG_MAX_RATIO);
+	point.y = center.y + (length * -cos_lookup(angle) / TRIG_MAX_RATIO);
 	return point;
+}
+
+
+static GPath *face_layer_path_for_two_points(GPoint first_point, GPoint second_point) {
+	GPoint points[] = { first_point, second_point };
+
+	static GPathInfo path_info;
+	path_info.points = points;
+	path_info.num_points = 2;
+
+	return gpath_create(&path_info);
+}
+
+
+static void subscribe_for_tick(struct FaceLayer *face_layer) {
+	if (face_layer->seconds_active) {
+		tick_timer_service_subscribe(SECOND_UNIT, handle_minute_tick);
+	}
+	else {
+		tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
+	}
 }
 
 
 // drawing
 static void draw_background(struct FaceLayer *face_layer, GContext *ctx) {
-	const GRect layer_bounds = layer_get_bounds(face_layer->back_layer);
+	GRect bounds;
+	face_layer_get_bounds_and_center(face_layer, &bounds, NULL);
 
 	graphics_context_set_fill_color(ctx, GColorBlack);
-	graphics_fill_rect(ctx, layer_bounds, 0, GCornerNone);
+	graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+}
+
+
+static void draw_dashes(struct FaceLayer *face_layer, GContext *ctx) {
+	if (face_layer->dashes_mode == FaceLayerDashesModeNone) {
+		return;
+	}
+	else {
+		GRect bounds;
+		GPoint center;
+		face_layer_get_bounds_and_center(face_layer, &bounds, &center);
+
+		graphics_context_set_stroke_color(ctx, GColorWhite);
+
+		for (int16_t i=0; i<kFaceLayerDashesCount; i++) {
+			const int16_t angle = TRIG_MAX_ANGLE * i / kFaceLayerHoursCount;
+
+			const GSize *dash_size = NULL;
+			if (i % (kFaceLayerDashesCount / 4) == 0) {
+				const bool dash_enabled = (face_layer->dashes_mode > FaceLayerDashesModeNone);
+				dash_size = dash_enabled ? &kFaceLayerMainDashSize : NULL;
+			}
+			else if (i % (kFaceLayerDashesCount / kFaceLayerHoursCount) == 0) {
+				const bool dash_enabled = (face_layer->dashes_mode > FaceLayerDashesModeNone);
+				dash_size = dash_enabled ? &kFaceLayerHourDashSize : NULL;
+			}
+			else {
+				const bool dash_enabled = (face_layer->dashes_mode > FaceLayerDashesModeMain);
+				dash_size = dash_enabled ? &kFaceLayerMinuteDashSize : NULL;
+			}
+
+			const GPoint point_from = face_layer_second_point_for_rotation(center, center.y, angle);
+			const GPoint point_to = face_layer_second_point_for_rotation(center, center.y - dash_size->h, angle);
+
+			graphics_context_set_stroke_width(ctx, dash_size->w);
+			graphics_draw_line(ctx, point_from, point_to);
+		}
+	}
 }
 
 
@@ -77,48 +163,50 @@ static void draw_hands(struct FaceLayer *face_layer, GContext *ctx) {
 		return;
 	}
 
-	const GRect layer_bounds = layer_get_bounds(face_layer->back_layer);
+	GRect bounds;
+	GPoint center;
+	face_layer_get_bounds_and_center(face_layer, &bounds, &center);
 
-	GPoint center_point, anchor_point;
-	center_point.x = layer_bounds.size.w / 2;
-	center_point.y = layer_bounds.size.h / 2;
+	// second
+	if (face_layer->seconds_active) {
+		const int16_t second_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_sec / kFaceLayerSecondsCount;
+		const GPoint second_point = face_layer_second_point_for_rotation(center, 80, second_angle);
 
-	const int16_t hour_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_hour / kFaceLayerHoursCount;
-	anchor_point = face_layer_anchor_point(face_layer->hand_hour_bitmap, FaceLayerAnchorModeHandHour);
-	graphics_draw_rotated_bitmap(ctx, face_layer->hand_hour_bitmap, anchor_point, hour_angle, center_point);
+		graphics_context_set_stroke_color(ctx, GColorWhite);
+		graphics_context_set_stroke_width(ctx, 1);
+		graphics_draw_line(ctx, center, second_point);
+	}
 
+	// minute
 	const int16_t minute_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_min / kFaceLayerMinutesCount;
-	anchor_point = face_layer_anchor_point(face_layer->hand_minute_bitmap, FaceLayerAnchorModeHandMinute);
-	graphics_draw_rotated_bitmap(ctx, face_layer->hand_minute_bitmap, anchor_point, minute_angle, center_point);
+	const GPoint minute_long_point = face_layer_second_point_for_rotation(center, 65, minute_angle);
+	const GPoint minute_short_point = face_layer_second_point_for_rotation(center, 64, minute_angle);
+
+	graphics_context_set_stroke_color(ctx, GColorWhite);
+	graphics_context_set_stroke_width(ctx, 7);
+	graphics_draw_line(ctx, center, minute_long_point);
+
+	graphics_context_set_stroke_color(ctx, GColorBlack);
+	graphics_context_set_stroke_width(ctx, 3);
+	graphics_draw_line(ctx, center, minute_short_point);
+
+	// hour
+	const int16_t hour_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_hour / kFaceLayerHoursCount;
+	const GPoint hour_point = face_layer_second_point_for_rotation(center, 40, hour_angle);
+
+	graphics_context_set_stroke_color(ctx, GColorWhite);
+	graphics_context_set_stroke_width(ctx, 5);
+	graphics_draw_line(ctx, center, hour_point);
 }
 
 
-static void draw_dashes_all(struct FaceLayer *face_layer, GContext *ctx, bool all) {
-	const GRect layer_bounds = layer_get_bounds(face_layer->back_layer);
+static void draw_center(struct FaceLayer *face_layer, GContext *ctx) {
+	GRect bounds;
+	GPoint center;
+	face_layer_get_bounds_and_center(face_layer, &bounds, &center);
 
 	graphics_context_set_fill_color(ctx, GColorWhite);
-
-	GPoint center_point, anchor_point;
-	center_point.x = layer_bounds.size.w / 2;
-	center_point.y = layer_bounds.size.h / 2;
-
-	for (int16_t i=0; i<kFaceLayerHoursCount; i++) {
-		const int16_t angle = TRIG_MAX_ANGLE * i / kFaceLayerHoursCount;
-		const bool is_third_hour = (i % 3 == 0);
-
-		GPoint round_point;
-		round_point.x = center_point.x + (center_point.x * sin_lookup(angle) / TRIG_MAX_RATIO);
-		round_point.y = center_point.y + (center_point.y * -cos_lookup(angle) / TRIG_MAX_RATIO);
-
-		if (is_third_hour) {
-			anchor_point = face_layer_anchor_point(face_layer->dash_long_bitmap, FaceLayerAnchorModeDashLong);
-			graphics_draw_rotated_bitmap(ctx, face_layer->dash_long_bitmap, anchor_point, angle, round_point);
-		}
-		else if (all) {
-			anchor_point = face_layer_anchor_point(face_layer->dash_short_bitmap, FaceLayerAnchorModeDashShort);
-			graphics_draw_rotated_bitmap(ctx, face_layer->dash_short_bitmap, anchor_point, angle, round_point);
-		}
-	}
+	graphics_fill_circle(ctx, center, 4);
 }
 
 
@@ -126,46 +214,14 @@ static void face_layer_update(Layer *layer, GContext *ctx) {
 	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
 
 	draw_background(face_layer, ctx);
-
-	graphics_context_set_fill_color(ctx, GColorWhite);
-	graphics_context_set_stroke_color(ctx, (GColor) {.argb=0b11111111});
-	graphics_context_set_stroke_width(ctx, 2);
-	GPoint path_points[] = { GPoint(60, 60), GPoint(140, 50), GPoint(110, 130), GPoint(50, 120) };
-
-	struct GPathInfo path_info;
-	path_info.points = path_points;
-	path_info.num_points = 4;
-
-	GPath *path = gpath_create(&path_info);
-	// gpath_draw_filled(ctx, path);
-	gpath_draw_outline(ctx, path);
-	// graphics_draw_line(ctx, path_points[0], path_points[1]);
-	// graphics_draw_line(ctx, path_points[1], path_points[2]);
-	// graphics_draw_line(ctx, path_points[2], path_points[3]);
-	// graphics_draw_line(ctx, path_points[3], path_points[0]);
-
-	return;
-
-	switch (face_layer->mode) {
-	case FaceLayerModeHandsOnly:
-		draw_hands(face_layer, ctx);
-		break;
-
-	case FaceLayerModeHandsWithMainDashes:
-		draw_hands(face_layer, ctx);
-		draw_dashes_all(face_layer, ctx, false);
-		break;
-		
-	case FaceLayerModeHandsWithAllDashes:
-		draw_hands(face_layer, ctx);
-		draw_dashes_all(face_layer, ctx, true);
-		break;
-	}
+	draw_dashes(face_layer, ctx);
+	draw_hands(face_layer, ctx);
+	draw_center(face_layer, ctx);
 }
 
 
 // informer handlers
-static void handle_minute_event(void *listener, void *object) {
+static void handle_minute_timer(void *listener, void *object) {
 	struct FaceLayer *face_layer = (struct FaceLayer *) listener;
 	struct tm *time = (struct tm *) object;
 
@@ -176,26 +232,45 @@ static void handle_minute_event(void *listener, void *object) {
 }
 
 
-static void handle_select_event(void *listener, void *object) {
+static void handle_up_click(void *listener, void *object) {
 	struct FaceLayer *face_layer = (struct FaceLayer *) listener;
 
-	switch (face_layer->mode) {
-	case FaceLayerModeHandsOnly:
-		face_layer->mode = FaceLayerModeHandsWithMainDashes;
-		break;
+	face_layer->seconds_active = !face_layer->seconds_active;
+	face_layer_update_seconds_active(face_layer);
 
-	case FaceLayerModeHandsWithMainDashes:
-		face_layer->mode = FaceLayerModeHandsWithAllDashes;
-		break;
+}
 
-	case FaceLayerModeHandsWithAllDashes:
-		face_layer->mode = FaceLayerModeHandsOnly;
-		break;
+
+static void handle_up_long_click(void *listener, void *object) {
+	struct FaceLayer *face_layer = (struct FaceLayer *) listener;
+
+	if (face_layer->dashes_mode-- == FaceLayerDashesMode_First) {
+		face_layer->dashes_mode = FaceLayerDashesMode_Last;
 	}
 
-	persist_write_int(PersistDataKeyWatchfaceMode, face_layer->mode);
+	face_layer_update_mode(face_layer);
+}
 
-	layer_mark_dirty(face_layer->back_layer);
+
+static void handle_down_long_click(void *listener, void *object) {
+	struct FaceLayer *face_layer = (struct FaceLayer *) listener;
+
+	if (face_layer->dashes_mode++ == FaceLayerDashesMode_Last) {
+		face_layer->dashes_mode = FaceLayerDashesMode_First;
+	}
+
+	face_layer_update_mode(face_layer);
+}
+
+
+static void handle_select_click(void *listener, void *object) {
+	// todo: show the day info
+}
+
+
+// tick handler
+static void handle_minute_tick(struct tm *time, TimeUnits changed_units) {
+	informer_inform_with_object(InformerEventMinuteTimer, time);
 }
 
 
@@ -210,18 +285,25 @@ struct FaceLayer *face_layer_create(GRect rect) {
 	face_layer->dash_short_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_SHORT);
 	face_layer->hand_hour_bitmap = gbitmap_create_with_resource(RESOURCE_ID_HAND_HOUR);
 	face_layer->hand_minute_bitmap = gbitmap_create_with_resource(RESOURCE_ID_HAND_MINUTE);
-
 	face_layer->has_time = false;
+	face_layer->dashes_mode = FaceLayerDashesModeAll;
+	face_layer->seconds_active = false;
 
 	if (persist_exists(PersistDataKeyWatchfaceMode)) {
-		face_layer->mode = persist_read_int(PersistDataKeyWatchfaceMode);
-	}
-	else {
-		face_layer->mode = FaceLayerModeHandsWithAllDashes;
+		face_layer->dashes_mode = persist_read_int(PersistDataKeyWatchfaceMode);
 	}
 
-	informer_add_listener(InformerEventMinuteTimer, face_layer, handle_minute_event);
-	informer_add_listener(InformerEventSelectClick, face_layer, handle_select_event);
+	if (persist_exists(PersistDataKeySecondsActive)) {
+		face_layer->seconds_active = persist_read_bool(PersistDataKeySecondsActive);
+	}
+
+	informer_add_listener(InformerEventMinuteTimer, face_layer, handle_minute_timer);
+	informer_add_listener(InformerEventUpClick, face_layer, handle_up_click);
+	informer_add_listener(InformerEventUpLongClick, face_layer, handle_up_long_click);
+	informer_add_listener(InformerEventDownLongClick, face_layer, handle_down_long_click);
+	informer_add_listener(InformerEventSelectClick, face_layer, handle_select_click);
+
+	tick_timer_service_subscribe(SECOND_UNIT, handle_minute_tick);
 
 	return face_layer;
 }
@@ -233,8 +315,13 @@ Layer *face_layer_get_layer(struct FaceLayer *face_layer) {
 
 
 void face_layer_destroy(struct FaceLayer *face_layer) {
-	informer_remove_listener(InformerEventMinuteTimer, face_layer, handle_minute_event);
-	informer_remove_listener(InformerEventSelectClick, face_layer, handle_select_event);
+	tick_timer_service_unsubscribe();
+
+	informer_remove_listener(InformerEventMinuteTimer, face_layer, handle_minute_timer);
+	informer_remove_listener(InformerEventSelectClick, face_layer, handle_up_click);
+	informer_remove_listener(InformerEventSelectClick, face_layer, handle_up_long_click);
+	informer_remove_listener(InformerEventSelectClick, face_layer, handle_down_long_click);
+	informer_remove_listener(InformerEventSelectClick, face_layer, handle_select_click);
 
 	layer_destroy(face_layer->back_layer);
 

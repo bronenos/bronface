@@ -27,19 +27,31 @@ static void handle_window_unload(Window *window) {
 }
 
 
-// tick handler
-static void handle_minute_tick(struct tm *time, TimeUnits changed_units) {
-	informer_inform_with_object(InformerEventMinuteTimer, time);
+// click handlers
+static void handle_up_click(ClickRecognizerRef recognizer, void *context) {
+	informer_inform_with_object(InformerEventUpClick, context);
 }
 
 
-// click handlers
+static void handle_up_long_click(ClickRecognizerRef recognizer, void *context) {
+	informer_inform_with_object(InformerEventUpLongClick, context);
+}
+
+
+static void handle_down_long_click(ClickRecognizerRef recognizer, void *context) {
+	informer_inform_with_object(InformerEventDownLongClick, context);
+}
+
+
 static void handle_select_click(ClickRecognizerRef recognizer, void *context) {
 	informer_inform_with_object(InformerEventSelectClick, context);
 }
 
 
 static void click_config_provider(void *context) {
+	window_single_click_subscribe(BUTTON_ID_UP, handle_up_click);
+	window_long_click_subscribe(BUTTON_ID_UP, 0, handle_up_long_click, NULL);
+	window_long_click_subscribe(BUTTON_ID_DOWN, 0, handle_down_long_click, NULL);
 	window_single_click_subscribe(BUTTON_ID_SELECT, handle_select_click);
 }
 
@@ -57,8 +69,6 @@ struct MainScene *main_scene_create() {
 		.unload = handle_window_unload
 	});
 
-	tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
-
 	return main_scene;
 }
 
@@ -69,7 +79,6 @@ Window *main_scene_get_window(struct MainScene *main_scene) {
 
 
 void main_scene_destroy(struct MainScene *main_scene) {
-	tick_timer_service_unsubscribe();
 	window_destroy(main_scene->window);
 	free(main_scene);
 }

@@ -4,6 +4,9 @@
 // types
 enum InformerEvent {
 	InformerEventMinuteTimer,
+	InformerEventUpClick,
+	InformerEventUpLongClick,
+	InformerEventDownLongClick,
 	InformerEventSelectClick,
 };
 
