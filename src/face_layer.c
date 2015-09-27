@@ -9,8 +9,8 @@ enum FaceLayerDashesMode {
 	FaceLayerDashesModeNone,
 	FaceLayerDashesModeMain,
 	FaceLayerDashesModeAll,
-	FaceLayerDashesMode_First = FaceLayerDashesModeNone,
-	FaceLayerDashesMode_Last = FaceLayerDashesModeAll,
+	FaceLayerDashesMode_First	= FaceLayerDashesModeNone,
+	FaceLayerDashesMode_Last	= FaceLayerDashesModeAll,
 };
 
 
