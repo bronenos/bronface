@@ -16,14 +16,14 @@ static void handle_window_load(Window *window) {
 	const GRect window_bounds = layer_get_bounds(window_layer);
 
 	struct MainScene *main_scene = (struct MainScene *) window_get_user_data(window);
-	main_scene->face_layer = ui_face_layer_create(window_bounds);
-	layer_add_child(window_layer, ui_face_layer_get_layer(main_scene->face_layer));
+	main_scene->face_layer = face_layer_create(window_bounds);
+	layer_add_child(window_layer, face_layer_get_layer(main_scene->face_layer));
 }
 
 
 static void handle_window_unload(Window *window) {
 	struct MainScene *main_scene = (struct MainScene *) window_get_user_data(window);
-	ui_face_layer_destroy(main_scene->face_layer);
+	face_layer_destroy(main_scene->face_layer);
 }
 
 
@@ -45,7 +45,7 @@ static void click_config_provider(void *context) {
 
 
 // core
-struct MainScene *ui_main_scene_create() {
+struct MainScene *main_scene_create() {
 	struct MainScene *main_scene = (struct MainScene *) malloc(sizeof(struct MainScene));
 
 	main_scene->window = window_create();
@@ -63,12 +63,12 @@ struct MainScene *ui_main_scene_create() {
 }
 
 
-Window *ui_main_scene_get_window(struct MainScene *main_scene) {
+Window *main_scene_get_window(struct MainScene *main_scene) {
 	return main_scene->window;
 }
 
 
-void ui_main_scene_destroy(struct MainScene *main_scene) {
+void main_scene_destroy(struct MainScene *main_scene) {
 	tick_timer_service_unsubscribe();
 	window_destroy(main_scene->window);
 	free(main_scene);

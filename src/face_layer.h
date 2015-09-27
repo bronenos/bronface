@@ -8,8 +8,8 @@ struct FaceLayer;
 
 
 // core
-struct FaceLayer *ui_face_layer_create(GRect rect);
-Layer *ui_face_layer_get_layer(struct FaceLayer *face_layer);
-void ui_face_layer_destroy(struct FaceLayer *face_layer);
+struct FaceLayer *face_layer_create(GRect rect);
+Layer *face_layer_get_layer(struct FaceLayer *face_layer);
+void face_layer_destroy(struct FaceLayer *face_layer);
 
 #endif

@@ -2,6 +2,7 @@
 #include "face_layer.h"
 #include "common.h"
 #include "informer.h"
+#include "antialiasing.h"
 
 
 // types
@@ -40,7 +41,7 @@ const int kFaceLayerMinutesCount	= 60;
 
 
 // internal
-static GPoint ui_face_layer_anchor_point(GBitmap *bitmap, FaceLayerAnchorMode mode) {
+static GPoint face_layer_anchor_point(GBitmap *bitmap, FaceLayerAnchorMode mode) {
 	GPoint point = GPointZero;
 	const GSize bitmap_size = gbitmap_get_bounds(bitmap).size;
 
@@ -83,11 +84,11 @@ static void draw_hands(struct FaceLayer *face_layer, GContext *ctx) {
 	center_point.y = layer_bounds.size.h / 2;
 
 	const int16_t hour_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_hour / kFaceLayerHoursCount;
-	anchor_point = ui_face_layer_anchor_point(face_layer->hand_hour_bitmap, FaceLayerAnchorModeHandHour);
+	anchor_point = face_layer_anchor_point(face_layer->hand_hour_bitmap, FaceLayerAnchorModeHandHour);
 	graphics_draw_rotated_bitmap(ctx, face_layer->hand_hour_bitmap, anchor_point, hour_angle, center_point);
 
 	const int16_t minute_angle = TRIG_MAX_ANGLE * face_layer->last_time.tm_min / kFaceLayerMinutesCount;
-	anchor_point = ui_face_layer_anchor_point(face_layer->hand_minute_bitmap, FaceLayerAnchorModeHandMinute);
+	anchor_point = face_layer_anchor_point(face_layer->hand_minute_bitmap, FaceLayerAnchorModeHandMinute);
 	graphics_draw_rotated_bitmap(ctx, face_layer->hand_minute_bitmap, anchor_point, minute_angle, center_point);
 }
 
@@ -110,21 +111,40 @@ static void draw_dashes_all(struct FaceLayer *face_layer, GContext *ctx, bool al
 		round_point.y = center_point.y + (center_point.y * -cos_lookup(angle) / TRIG_MAX_RATIO);
 
 		if (is_third_hour) {
-			anchor_point = ui_face_layer_anchor_point(face_layer->dash_long_bitmap, FaceLayerAnchorModeDashLong);
+			anchor_point = face_layer_anchor_point(face_layer->dash_long_bitmap, FaceLayerAnchorModeDashLong);
 			graphics_draw_rotated_bitmap(ctx, face_layer->dash_long_bitmap, anchor_point, angle, round_point);
 		}
 		else if (all) {
-			anchor_point = ui_face_layer_anchor_point(face_layer->dash_short_bitmap, FaceLayerAnchorModeDashShort);
+			anchor_point = face_layer_anchor_point(face_layer->dash_short_bitmap, FaceLayerAnchorModeDashShort);
 			graphics_draw_rotated_bitmap(ctx, face_layer->dash_short_bitmap, anchor_point, angle, round_point);
 		}
 	}
 }
 
 
-static void ui_face_layer_update(Layer *layer, GContext *ctx) {
+static void face_layer_update(Layer *layer, GContext *ctx) {
 	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
 
 	draw_background(face_layer, ctx);
+
+	graphics_context_set_fill_color(ctx, GColorWhite);
+	graphics_context_set_stroke_color(ctx, (GColor) {.argb=0b11111111});
+	graphics_context_set_stroke_width(ctx, 2);
+	GPoint path_points[] = { GPoint(60, 60), GPoint(140, 50), GPoint(110, 130), GPoint(50, 120) };
+
+	struct GPathInfo path_info;
+	path_info.points = path_points;
+	path_info.num_points = 4;
+
+	GPath *path = gpath_create(&path_info);
+	// gpath_draw_filled(ctx, path);
+	gpath_draw_outline(ctx, path);
+	// graphics_draw_line(ctx, path_points[0], path_points[1]);
+	// graphics_draw_line(ctx, path_points[1], path_points[2]);
+	// graphics_draw_line(ctx, path_points[2], path_points[3]);
+	// graphics_draw_line(ctx, path_points[3], path_points[0]);
+
+	return;
 
 	switch (face_layer->mode) {
 	case FaceLayerModeHandsOnly:
@@ -180,9 +200,9 @@ static void handle_select_event(void *listener, void *object) {
 
 
 // core
-struct FaceLayer *ui_face_layer_create(GRect rect) {
+struct FaceLayer *face_layer_create(GRect rect) {
 	Layer *layer = layer_create_with_data(rect, sizeof(struct FaceLayer));
-	layer_set_update_proc(layer, ui_face_layer_update);
+	layer_set_update_proc(layer, face_layer_update);
 
 	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
 	face_layer->back_layer = layer;
@@ -207,12 +227,12 @@ struct FaceLayer *ui_face_layer_create(GRect rect) {
 }
 
 
-Layer *ui_face_layer_get_layer(struct FaceLayer *face_layer) {
+Layer *face_layer_get_layer(struct FaceLayer *face_layer) {
 	return face_layer->back_layer;
 }
 
 
-void ui_face_layer_destroy(struct FaceLayer *face_layer) {
+void face_layer_destroy(struct FaceLayer *face_layer) {
 	informer_remove_listener(InformerEventMinuteTimer, face_layer, handle_minute_event);
 	informer_remove_listener(InformerEventSelectClick, face_layer, handle_select_event);
 
