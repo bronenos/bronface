@@ -161,15 +161,15 @@ static void draw_dashes(struct FaceLayer *face_layer, GContext *ctx) {
 			if (is_main_dash && (face_layer->dashes_mode > FaceLayerDashesModeNone)) {
 				const GPoint point_from = face_layer_second_point_for_rotation(center, center.y, angle);
 				const GPoint point_to = face_layer_second_point_for_rotation(center, center.y - 10, angle);
-				const GPoint point_inner = face_layer_second_point_for_rotation(center, center.y - 7, angle);
+				const GPoint point_inner = face_layer_second_point_for_rotation(center, center.y - 6, angle);
 
 				graphics_context_set_stroke_color(ctx, color_for_main_dash());
-				graphics_context_set_stroke_width(ctx, 5);
+				graphics_context_set_stroke_width(ctx, 7);
 				graphics_draw_line(ctx, point_from, point_to);
 
 				graphics_context_set_stroke_color(ctx, color_for_background());
 				graphics_context_set_stroke_width(ctx, 3);
-				graphics_draw_line(ctx, point_from, point_inner);
+				graphics_draw_line(ctx, point_inner, point_to);
 
 				continue;
 			}
