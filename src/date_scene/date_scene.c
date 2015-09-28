@@ -52,6 +52,5 @@ Window *date_scene_get_window(struct DateScene *date_scene) {
 
 
 void date_scene_destroy(struct DateScene *date_scene) {
-	window_destroy(date_scene->window);
 	free(date_scene);
 }

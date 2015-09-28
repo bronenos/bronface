@@ -3,7 +3,7 @@
 
 // macros
 
-#define log_verbose(fmt, args) APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, fmt, args)
+#define log_verbose(args...) APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, args)
 
 
 // types

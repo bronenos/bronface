@@ -23,9 +23,7 @@ struct FaceLayer {
 	GBitmap *hand_hour_bitmap;
 	GBitmap *hand_minute_bitmap;
 
-	bool has_time;
 	struct tm last_time;
-
 	enum FaceLayerDashesMode dashes_mode;
 	bool seconds_active;
 };
@@ -140,10 +138,6 @@ static void draw_dashes(struct FaceLayer *face_layer, GContext *ctx) {
 
 
 static void draw_hands(struct FaceLayer *face_layer, GContext *ctx) {
-	if (face_layer->has_time == false) {
-		return;
-	}
-
 	const GRect bounds = layer_get_bounds(face_layer->back_layer);
 	const GPoint center = grect_center_point(&bounds);
 
@@ -217,7 +211,6 @@ static void handle_time_tick_event(void *listener, void *object) {
 	struct tm *time = (struct tm *) object;
 
 	face_layer->last_time = *time;
-	face_layer->has_time = true;
 
 	layer_mark_dirty(face_layer->back_layer);
 }
@@ -228,7 +221,6 @@ static void handle_up_click_event(void *listener, void *object) {
 
 	face_layer->seconds_active = !face_layer->seconds_active;
 	face_layer_update_seconds_active(face_layer);
-
 }
 
 
@@ -267,13 +259,15 @@ struct FaceLayer *face_layer_create(GRect rect) {
 	Layer *layer = layer_create_with_data(rect, sizeof(struct FaceLayer));
 	layer_set_update_proc(layer, face_layer_update);
 
+	const time_t t = time(NULL);
+
 	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
 	face_layer->back_layer = layer;
 	face_layer->dash_long_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_LONG);
 	face_layer->dash_short_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_SHORT);
 	face_layer->hand_hour_bitmap = gbitmap_create_with_resource(RESOURCE_ID_HAND_HOUR);
 	face_layer->hand_minute_bitmap = gbitmap_create_with_resource(RESOURCE_ID_HAND_MINUTE);
-	face_layer->has_time = false;
+	face_layer->last_time = *localtime(&t);
 	face_layer->dashes_mode = FaceLayerDashesModeAll;
 	face_layer->seconds_active = false;
 
@@ -316,5 +310,6 @@ void face_layer_destroy(struct FaceLayer *face_layer) {
 	gbitmap_destroy(face_layer->hand_hour_bitmap);
 	gbitmap_destroy(face_layer->hand_minute_bitmap);
 
+	log_verbose("%s -> layer %p", __FUNCTION__, face_layer);
 	free(face_layer);
 }
