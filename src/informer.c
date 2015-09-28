@@ -3,6 +3,7 @@
 
 
 // types
+
 struct InformerItem {
 	enum InformerEvent event;
 	InformerCallback callback;
@@ -17,6 +18,7 @@ struct Informer {
 
 
 // core
+
 void informer_add_listener(enum InformerEvent event, void *listener, InformerCallback callback) {
 	g_informer.items[g_informer.items_count].event = event;
 	g_informer.items[g_informer.items_count].callback = callback;
