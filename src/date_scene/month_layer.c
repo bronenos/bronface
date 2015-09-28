@@ -74,6 +74,4 @@ void month_layer_destroy(struct MonthLayer *month_layer) {
 	informer_remove_listener(InformerEventDayTick, month_layer, handle_day_tick_event);
 
 	layer_destroy(month_layer->back_layer);
-
-	free(month_layer);
 }

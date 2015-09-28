@@ -7,7 +7,7 @@ static struct FaceScene *g_face_scene;
 
 static void init() {
 	g_face_scene = face_scene_create();
-	window_stack_push(face_scene_get_window(g_face_scene), true);
+	window_stack_push(face_scene_get_window(g_face_scene), false);
 }
 
 
