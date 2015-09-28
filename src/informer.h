@@ -5,9 +5,7 @@
 
 enum InformerEvent {
 	InformerEventTimeTick,
-	InformerEventUpClick,
-	InformerEventUpLongClick,
-	InformerEventDownLongClick,
+	InformerEventAccel,
 	InformerEventDayTick,
 };
 

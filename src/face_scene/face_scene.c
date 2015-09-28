@@ -33,35 +33,23 @@ static void handle_window_unload(Window *window) {
 }
 
 
-// clicks
+// events
 
-static void handle_up_click_event(ClickRecognizerRef recognizer, void *context) {
-	informer_inform_with_object(InformerEventUpClick, context);
+static void handle_accel_event(void *listener, void *object) {
+	struct FaceScene *face_scene = (struct FaceScene *) listener;
+	AccelAxisType *axis = (AccelAxisType *) object;
+
+	if (*axis == ACCEL_AXIS_Z) {
+		face_scene->date_scene = date_scene_create();
+		window_stack_push(date_scene_get_window(face_scene->date_scene), true);
+	}
 }
 
 
-static void handle_up_long_click_event(ClickRecognizerRef recognizer, void *context) {
-	informer_inform_with_object(InformerEventUpLongClick, context);
-}
+// accel
 
-
-static void handle_down_long_click_event(ClickRecognizerRef recognizer, void *context) {
-	informer_inform_with_object(InformerEventDownLongClick, context);
-}
-
-
-static void handle_select_click_event(ClickRecognizerRef recognizer, void *context) {
-	struct FaceScene *face_scene = (struct FaceScene *) context;
-	face_scene->date_scene = date_scene_create();
-	window_stack_push(date_scene_get_window(face_scene->date_scene), true);
-}
-
-
-static void click_config_provider(void *context) {
-	window_single_click_subscribe(BUTTON_ID_UP, handle_up_click_event);
-	window_long_click_subscribe(BUTTON_ID_UP, 0, handle_up_long_click_event, NULL);
-	window_long_click_subscribe(BUTTON_ID_DOWN, 0, handle_down_long_click_event, NULL);
-	window_single_click_subscribe(BUTTON_ID_SELECT, handle_select_click_event);
+static void handle_accel_tap(AccelAxisType axis, int32_t direction) {
+	informer_inform_with_object(InformerEventAccel, &axis);
 }
 
 
@@ -72,12 +60,15 @@ struct FaceScene *face_scene_create() {
 
 	face_scene->window = window_create();
 	window_set_user_data(face_scene->window, face_scene);
-	window_set_click_config_provider_with_context(face_scene->window, click_config_provider, face_scene);
 
 	window_set_window_handlers(face_scene->window, (WindowHandlers) {
 		.load = handle_window_load,
 		.unload = handle_window_unload
 	});
+
+	informer_add_listener(InformerEventAccel, face_scene, handle_accel_event);
+
+	accel_tap_service_subscribe(handle_accel_tap);
 
 	return face_scene;
 }
@@ -89,6 +80,10 @@ Window *face_scene_get_window(struct FaceScene *face_scene) {
 
 
 void face_scene_destroy(struct FaceScene *face_scene) {
+	accel_tap_service_unsubscribe();
+
+	informer_remove_listener(InformerEventAccel, face_scene, handle_accel_event);
+
 	window_destroy(face_scene->window);
 	free(face_scene);
 }

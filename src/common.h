@@ -20,6 +20,11 @@ enum PersistDataKey {
 	PersistDataKeySecondsActive,
 };
 
+struct AccelParams {
+	AccelAxisType axis;
+	int32_t direction;
+};
+
 
 // funcs
 
