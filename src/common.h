@@ -8,9 +8,21 @@
 
 // types
 
+enum DeviceColor {
+	DeviceColorSilver,
+	DeviceColorBlack,
+	DeviceColorRose,
+	DeviceColor_Count,
+};
+
 enum PersistDataKey {
 	PersistDataKeyWatchfaceMode,
 	PersistDataKeySecondsActive,
 };
+
+
+// funcs
+
+enum DeviceColor bk_get_device_color();
 
 #endif
