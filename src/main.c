@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include "face_scene.h"
+#include "face_scene/face_scene.h"
 
 
 static struct FaceScene *g_face_scene;
