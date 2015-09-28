@@ -1,18 +1,18 @@
 #include <pebble.h>
-#include "main_scene.h"
+#include "face_scene.h"
 
 
-static struct MainScene *g_main_scene;
+static struct FaceScene *g_face_scene;
 
 
 static void init() {
-	g_main_scene = main_scene_create();
-	window_stack_push(main_scene_get_window(g_main_scene), true);
+	g_face_scene = face_scene_create();
+	window_stack_push(face_scene_get_window(g_face_scene), true);
 }
 
 
 static void deinit() {
-	main_scene_destroy(g_main_scene);
+	face_scene_destroy(g_face_scene);
 }
 
 
