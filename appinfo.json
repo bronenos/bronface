@@ -13,27 +13,6 @@
     "dummy": 0
   },
   "resources": {
-    "media": [
-    {
-      "type": "png",
-      "name": "DASH_LONG",
-      "file": "dash_long.png"
-    },
-    {
-      "type": "png",
-      "name": "DASH_SHORT",
-      "file": "dash_short.png"
-    },
-    {
-      "type": "png",
-      "name": "HAND_HOUR",
-      "file": "hand_hour.png"
-    },
-    {
-      "type": "png",
-      "name": "HAND_MINUTE",
-      "file": "hand_minute.png"
-    }
-    ]
+    "media": []
   }
 }

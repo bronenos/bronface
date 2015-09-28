@@ -18,11 +18,6 @@ enum FaceLayerDashesMode {
 struct FaceLayer {
 	Layer *back_layer;
 
-	GBitmap *dash_long_bitmap;
-	GBitmap *dash_short_bitmap;
-	GBitmap *hand_hour_bitmap;
-	GBitmap *hand_minute_bitmap;
-
 	struct tm last_time;
 	enum FaceLayerDashesMode dashes_mode;
 	bool seconds_active;
@@ -319,10 +314,6 @@ struct FaceLayer *face_layer_create(GRect rect) {
 
 	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
 	face_layer->back_layer = layer;
-	face_layer->dash_long_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_LONG);
-	face_layer->dash_short_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DASH_SHORT);
-	face_layer->hand_hour_bitmap = gbitmap_create_with_resource(RESOURCE_ID_HAND_HOUR);
-	face_layer->hand_minute_bitmap = gbitmap_create_with_resource(RESOURCE_ID_HAND_MINUTE);
 	face_layer->dashes_mode = FaceLayerDashesModeAll;
 	face_layer->seconds_active = false;
 
@@ -362,9 +353,4 @@ void face_layer_destroy(struct FaceLayer *face_layer) {
 	informer_remove_listener(InformerEventDownLongClick, face_layer, handle_down_long_click_event);
 
 	layer_destroy(face_layer->back_layer);
-
-	gbitmap_destroy(face_layer->dash_long_bitmap);
-	gbitmap_destroy(face_layer->dash_short_bitmap);
-	gbitmap_destroy(face_layer->hand_hour_bitmap);
-	gbitmap_destroy(face_layer->hand_minute_bitmap);
 }
