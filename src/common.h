@@ -2,6 +2,7 @@
 #define COMMON_H
 
 // types
+
 enum PersistDataKey {
 	PersistDataKeyWatchfaceMode,
 	PersistDataKeySecondsActive,
