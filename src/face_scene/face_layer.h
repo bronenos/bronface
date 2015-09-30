@@ -13,8 +13,8 @@ typedef struct FaceLayer FaceLayer;
 
 FaceLayer *face_layer_create(GRect rect);
 Layer *face_layer_get_layer(FaceLayer *face_layer);
-void face_layer_did_get_focus(FaceLayer *face_layer);
-void face_layer_did_lost_focus(FaceLayer *face_layer);
+void face_layer_got_focus(FaceLayer *face_layer);
+void face_layer_lost_focus(FaceLayer *face_layer);
 void face_layer_destroy(FaceLayer *face_layer);
 
 #endif
