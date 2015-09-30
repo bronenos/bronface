@@ -13,13 +13,16 @@ enum FaceLayerDashesMode {
 	FaceLayerDashesMode_First	= FaceLayerDashesModeNone,
 	FaceLayerDashesMode_Last	= FaceLayerDashesModeAll,
 };
+typedef enum FaceLayerDashesMode FaceLayerDashesMode;
 
 
 struct FaceLayer {
 	Layer *back_layer;
 
 	tm last_time;
-	enum FaceLayerDashesMode dashes_mode;
+	BatteryChargeState last_battery;
+
+	FaceLayerDashesMode dashes_mode;
 	bool seconds_active;
 };
 
@@ -251,7 +254,16 @@ static void draw_center(FaceLayer *face_layer, GContext *ctx) {
 	const GRect bounds = layer_get_bounds(face_layer->back_layer);
 	const GPoint center = grect_center_point(&bounds);
 
-	graphics_context_set_fill_color(ctx, color_for_second_hand());
+	if (face_layer->last_battery.is_charging) {
+		graphics_context_set_fill_color(ctx, GColorJaegerGreen);
+	}
+	else if (face_layer->last_battery.charge_percent <= 10) {
+		graphics_context_set_fill_color(ctx, GColorFolly);
+	}
+	else {
+		graphics_context_set_fill_color(ctx, color_for_second_hand());
+	}
+
 	graphics_fill_circle(ctx, center, 4);
 }
 
@@ -296,6 +308,16 @@ static void handle_accel_event(void *listener, void *object) {
 }
 
 
+static void handle_battery_event(void *listener, void *object) {
+	FaceLayer *face_layer = listener;
+	BatteryChargeState *battery = object;
+
+	face_layer->last_battery = *battery;
+
+	layer_mark_dirty(face_layer->back_layer);
+}
+
+
 // ticks
 
 static void handle_time_tick(tm *time, TimeUnits changed_units) {
@@ -326,8 +348,12 @@ FaceLayer *face_layer_create(GRect rect) {
 		face_layer->seconds_active = true;
 	}
 
+	face_layer->last_battery.is_charging = false;
+	face_layer->last_battery.charge_percent = 100;
+
 	informer_add_listener(InformerEventTimeTick, face_layer, handle_time_tick_event);
 	informer_add_listener(InformerEventAccel, face_layer, handle_accel_event);
+	informer_add_listener(InformerEventBattery, face_layer, handle_battery_event);
 
 	return face_layer;
 }
@@ -356,6 +382,7 @@ void face_layer_did_lost_focus(FaceLayer *face_layer) {
 void face_layer_destroy(FaceLayer *face_layer) {
 	informer_remove_listener(InformerEventTimeTick, face_layer, handle_time_tick_event);
 	informer_remove_listener(InformerEventAccel, face_layer, handle_accel_event);
+	informer_remove_listener(InformerEventBattery, face_layer, handle_battery_event);
 
 	layer_destroy(face_layer->back_layer);
 }

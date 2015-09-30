@@ -76,7 +76,12 @@ static void handle_accel_event(void *listener, void *object) {
 }
 
 
-// accel
+// services
+
+static void handle_battery_state(BatteryChargeState battery) {
+	informer_inform_with_object(InformerEventBattery, &battery);
+}
+
 
 static void handle_accel_tap(AccelAxisType axis, int32_t direction) {
 	informer_inform_with_object(InformerEventAccel, &axis);
@@ -106,6 +111,7 @@ FaceScene *face_scene_create() {
 
 	informer_add_listener(InformerEventAccel, face_scene, handle_accel_event);
 
+	battery_state_service_subscribe(handle_battery_state);
 	accel_tap_service_subscribe(handle_accel_tap);
 
 	app_timer_register(5500, handle_timer, face_scene);
@@ -122,6 +128,7 @@ Window *face_scene_get_window(FaceScene *face_scene) {
 
 void face_scene_destroy(FaceScene *face_scene) {
 	accel_tap_service_unsubscribe();
+	battery_state_service_unsubscribe();
 
 	informer_remove_listener(InformerEventAccel, face_scene, handle_accel_event);
 

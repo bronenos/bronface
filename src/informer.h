@@ -5,8 +5,9 @@
 
 enum InformerEvent {
 	InformerEventTimeTick,
-	InformerEventAccel,
 	InformerEventDayTick,
+	InformerEventAccel,
+	InformerEventBattery,
 };
 typedef enum InformerEvent InformerEvent;
 
