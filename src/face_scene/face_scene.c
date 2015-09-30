@@ -109,7 +109,7 @@ FaceScene *face_scene_create() {
 	accel_tap_service_subscribe(handle_accel_tap);
 
 	app_timer_register(5500, handle_timer, face_scene);
-	app_timer_register(8500, handle_timer, face_scene);
+	app_timer_register(15500, handle_timer, face_scene);
 
 	return face_scene;
 }
