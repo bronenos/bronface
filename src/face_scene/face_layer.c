@@ -312,9 +312,6 @@ struct FaceLayer *face_layer_create(GRect rect) {
 	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
 	face_layer->back_layer = layer;
 
-	const time_t t = time(NULL);
-	face_layer->last_time = *localtime(&t);
-
 	if (persist_exists(PersistDataKeyWatchfaceMode)) {
 		face_layer->dashes_mode = persist_read_int(PersistDataKeyWatchfaceMode);
 	}
@@ -332,8 +329,6 @@ struct FaceLayer *face_layer_create(GRect rect) {
 	informer_add_listener(InformerEventTimeTick, face_layer, handle_time_tick_event);
 	informer_add_listener(InformerEventAccel, face_layer, handle_accel_event);
 
-	subscribe_for_tick(face_layer);
-
 	return face_layer;
 }
 
@@ -343,9 +338,22 @@ Layer *face_layer_get_layer(struct FaceLayer *face_layer) {
 }
 
 
-void face_layer_destroy(struct FaceLayer *face_layer) {
-	tick_timer_service_unsubscribe();
+void face_layer_did_get_focus(struct FaceLayer *face_layer) {
+	const time_t t = time(NULL);
+	face_layer->last_time = *localtime(&t);
 
+	subscribe_for_tick(face_layer);
+
+	layer_mark_dirty(face_layer->back_layer);
+}
+
+
+void face_layer_did_lost_focus(struct FaceLayer *face_layer) {
+	tick_timer_service_unsubscribe();
+}
+
+
+void face_layer_destroy(struct FaceLayer *face_layer) {
 	informer_remove_listener(InformerEventTimeTick, face_layer, handle_time_tick_event);
 	informer_remove_listener(InformerEventAccel, face_layer, handle_accel_event);
 

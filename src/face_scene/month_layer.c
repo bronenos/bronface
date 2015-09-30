@@ -57,8 +57,6 @@ struct MonthLayer *month_layer_create(GRect rect) {
 
 	informer_add_listener(InformerEventDayTick, month_layer, handle_day_tick_event);
 
-	tick_timer_service_subscribe(DAY_UNIT, handle_day_tick);
-
 	return month_layer;
 }
 
@@ -68,9 +66,17 @@ Layer *month_layer_get_layer(struct MonthLayer *month_layer) {
 }
 
 
-void month_layer_destroy(struct MonthLayer *month_layer) {
-	tick_timer_service_unsubscribe();
+void month_layer_did_get_focus(struct MonthLayer *month_layer) {
+	tick_timer_service_subscribe(DAY_UNIT, handle_day_tick);
+}
 
+
+void month_layer_did_lost_focus(struct MonthLayer *month_layer) {
+	tick_timer_service_unsubscribe();
+}
+
+
+void month_layer_destroy(struct MonthLayer *month_layer) {
 	informer_remove_listener(InformerEventDayTick, month_layer, handle_day_tick_event);
 
 	layer_destroy(month_layer->back_layer);
