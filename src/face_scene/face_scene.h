@@ -7,12 +7,13 @@
 // types
 
 struct FaceScene;
+typedef struct FaceScene FaceScene;
 
 
 // core
 
-struct FaceScene *face_scene_create();
-Window *face_scene_get_window(struct FaceScene *face_scene);
-void face_scene_destroy(struct FaceScene *face_scene);
+FaceScene *face_scene_create();
+Window *face_scene_get_window(FaceScene *face_scene);
+void face_scene_destroy(FaceScene *face_scene);
 
 #endif

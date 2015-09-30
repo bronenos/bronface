@@ -2,7 +2,7 @@
 #include "common.h"
 
 
-enum DeviceColor bk_get_device_color() {
+DeviceColor bk_get_device_color() {
 	switch (watch_info_get_color()) {
 	case WATCH_INFO_COLOR_TIME_ROUND_SILVER_14:
 	case WATCH_INFO_COLOR_TIME_ROUND_SILVER_20:

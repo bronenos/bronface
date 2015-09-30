@@ -6,14 +6,15 @@
 // types
 
 struct MonthLayer;
+typedef struct MonthLayer MonthLayer;
 
 
 // core
 
-struct MonthLayer *month_layer_create(GRect rect);
-Layer *month_layer_get_layer(struct MonthLayer *month_layer);
-void month_layer_did_get_focus(struct MonthLayer *month_layer);
-void month_layer_did_lost_focus(struct MonthLayer *month_layer);
-void month_layer_destroy(struct MonthLayer *month_layer);
+MonthLayer *month_layer_create(GRect rect);
+Layer *month_layer_get_layer(MonthLayer *month_layer);
+void month_layer_did_get_focus(MonthLayer *month_layer);
+void month_layer_did_lost_focus(MonthLayer *month_layer);
+void month_layer_destroy(MonthLayer *month_layer);
 
 #endif

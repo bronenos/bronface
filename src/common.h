@@ -14,20 +14,23 @@ enum DeviceColor {
 	DeviceColorRose,
 	DeviceColor_Count,
 };
+typedef enum DeviceColor DeviceColor;
 
 enum PersistDataKey {
 	PersistDataKeyWatchfaceMode,
 	PersistDataKeySecondsActive,
 };
+typedef enum PersistDataKey PersistDataKey;
 
 struct AccelParams {
 	AccelAxisType axis;
 	int32_t direction;
 };
+typedef struct AccelParams AccelParams;
 
 
 // funcs
 
-enum DeviceColor bk_get_device_color();
+DeviceColor bk_get_device_color();
 
 #endif

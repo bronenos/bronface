@@ -9,17 +9,18 @@ struct InformerItem {
 	InformerCallback callback;
 	void *listener;
 };
+typedef struct InformerItem InformerItem;
 
 
 struct Informer {
-	struct InformerItem items[0xF];
+	InformerItem items[0xF];
 	int16_t items_count;
 } g_informer;
 
 
 // core
 
-void informer_add_listener(enum InformerEvent event, void *listener, InformerCallback callback) {
+void informer_add_listener(InformerEvent event, void *listener, InformerCallback callback) {
 	g_informer.items[g_informer.items_count].event = event;
 	g_informer.items[g_informer.items_count].callback = callback;
 	g_informer.items[g_informer.items_count].listener = listener;
@@ -27,7 +28,7 @@ void informer_add_listener(enum InformerEvent event, void *listener, InformerCal
 }
 
 
-void informer_remove_listener(enum InformerEvent event, void *listener, InformerCallback callback) {
+void informer_remove_listener(InformerEvent event, void *listener, InformerCallback callback) {
 	for (int16_t i=0; i<g_informer.items_count; i++) {
 		if (g_informer.items[i].event != event) {
 			continue;
@@ -51,7 +52,7 @@ void informer_remove_listener(enum InformerEvent event, void *listener, Informer
 }
 
 
-void informer_inform_with_object(enum InformerEvent event, void *object) {
+void informer_inform_with_object(InformerEvent event, void *object) {
 	for (int16_t i=0; i<g_informer.items_count; i++) {
 		if (g_informer.items[i].event != event) {
 			continue;

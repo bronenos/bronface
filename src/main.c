@@ -2,7 +2,7 @@
 #include "face_scene/face_scene.h"
 
 
-static struct FaceScene *g_face_scene;
+static FaceScene *g_face_scene;
 
 
 static void init() {

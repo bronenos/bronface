@@ -18,7 +18,7 @@ enum FaceLayerDashesMode {
 struct FaceLayer {
 	Layer *back_layer;
 
-	struct tm last_time;
+	tm last_time;
 	enum FaceLayerDashesMode dashes_mode;
 	bool seconds_active;
 };
@@ -43,20 +43,20 @@ const int16_t	kFaceLayerMainInterval		= 15;
 
 // forward
 
-static void subscribe_for_tick(struct FaceLayer *face_layer);
-static void handle_time_tick(struct tm *time, TimeUnits changed_units);
+static void subscribe_for_tick(FaceLayer *face_layer);
+static void handle_time_tick(tm *time, TimeUnits changed_units);
 
 
 // internal
 
-static void face_layer_update_mode(struct FaceLayer *face_layer) {
+static void face_layer_update_mode(FaceLayer *face_layer) {
 	persist_write_int(PersistDataKeyWatchfaceMode, face_layer->dashes_mode);
 
 	layer_mark_dirty(face_layer->back_layer);
 }
 
 
-static void face_layer_update_seconds_active(struct FaceLayer *face_layer) {
+static void face_layer_update_seconds_active(FaceLayer *face_layer) {
 	persist_write_bool(PersistDataKeySecondsActive, face_layer->seconds_active);
 
 	tick_timer_service_unsubscribe();
@@ -72,7 +72,7 @@ static GPoint face_layer_second_point_for_rotation(GPoint center, int16_t length
 }
 
 
-static void subscribe_for_tick(struct FaceLayer *face_layer) {
+static void subscribe_for_tick(FaceLayer *face_layer) {
 	if (face_layer->seconds_active) {
 		tick_timer_service_subscribe(SECOND_UNIT, handle_time_tick);
 	}
@@ -138,7 +138,7 @@ static GColor color_for_second_hand() {
 
 // drawing
 
-static void draw_background(struct FaceLayer *face_layer, GContext *ctx) {
+static void draw_background(FaceLayer *face_layer, GContext *ctx) {
 	const GRect bounds = layer_get_bounds(face_layer->back_layer);
 
 	graphics_context_set_fill_color(ctx, color_for_background());
@@ -146,7 +146,7 @@ static void draw_background(struct FaceLayer *face_layer, GContext *ctx) {
 }
 
 
-static void draw_dashes(struct FaceLayer *face_layer, GContext *ctx) {
+static void draw_dashes(FaceLayer *face_layer, GContext *ctx) {
 	if (face_layer->dashes_mode == FaceLayerDashesModeNone) {
 		return;
 	}
@@ -201,7 +201,7 @@ static void draw_dashes(struct FaceLayer *face_layer, GContext *ctx) {
 }
 
 
-static void draw_hands(struct FaceLayer *face_layer, GContext *ctx) {
+static void draw_hands(FaceLayer *face_layer, GContext *ctx) {
 	const GRect bounds = layer_get_bounds(face_layer->back_layer);
 	const GPoint center = grect_center_point(&bounds);
 
@@ -247,7 +247,7 @@ static void draw_hands(struct FaceLayer *face_layer, GContext *ctx) {
 }
 
 
-static void draw_center(struct FaceLayer *face_layer, GContext *ctx) {
+static void draw_center(FaceLayer *face_layer, GContext *ctx) {
 	const GRect bounds = layer_get_bounds(face_layer->back_layer);
 	const GPoint center = grect_center_point(&bounds);
 
@@ -257,7 +257,7 @@ static void draw_center(struct FaceLayer *face_layer, GContext *ctx) {
 
 
 static void face_layer_update(Layer *layer, GContext *ctx) {
-	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
+	FaceLayer *face_layer = layer_get_data(layer);
 
 	draw_background(face_layer, ctx);
 	draw_dashes(face_layer, ctx);
@@ -269,8 +269,8 @@ static void face_layer_update(Layer *layer, GContext *ctx) {
 // events
 
 static void handle_time_tick_event(void *listener, void *object) {
-	struct FaceLayer *face_layer = (struct FaceLayer *) listener;
-	struct tm *time = (struct tm *) object;
+	FaceLayer *face_layer = listener;
+	tm *time = object;
 
 	face_layer->last_time = *time;
 
@@ -279,7 +279,7 @@ static void handle_time_tick_event(void *listener, void *object) {
 
 
 static void handle_accel_event(void *listener, void *object) {
-	struct FaceLayer *face_layer = (struct FaceLayer *) listener;
+	FaceLayer *face_layer = listener;
 	AccelAxisType *axis = (AccelAxisType *) object;
 
 	if (*axis == ACCEL_AXIS_Y) {
@@ -298,18 +298,18 @@ static void handle_accel_event(void *listener, void *object) {
 
 // ticks
 
-static void handle_time_tick(struct tm *time, TimeUnits changed_units) {
+static void handle_time_tick(tm *time, TimeUnits changed_units) {
 	informer_inform_with_object(InformerEventTimeTick, time);
 }
 
 
 // core
 
-struct FaceLayer *face_layer_create(GRect rect) {
-	Layer *layer = layer_create_with_data(rect, sizeof(struct FaceLayer));
+FaceLayer *face_layer_create(GRect rect) {
+	Layer *layer = layer_create_with_data(rect, sizeof(FaceLayer));
 	layer_set_update_proc(layer, face_layer_update);
 
-	struct FaceLayer *face_layer = (struct FaceLayer *) layer_get_data(layer);
+	FaceLayer *face_layer = layer_get_data(layer);
 	face_layer->back_layer = layer;
 
 	if (persist_exists(PersistDataKeyWatchfaceMode)) {
@@ -333,12 +333,12 @@ struct FaceLayer *face_layer_create(GRect rect) {
 }
 
 
-Layer *face_layer_get_layer(struct FaceLayer *face_layer) {
+Layer *face_layer_get_layer(FaceLayer *face_layer) {
 	return face_layer->back_layer;
 }
 
 
-void face_layer_did_get_focus(struct FaceLayer *face_layer) {
+void face_layer_did_get_focus(FaceLayer *face_layer) {
 	const time_t t = time(NULL);
 	face_layer->last_time = *localtime(&t);
 
@@ -348,12 +348,12 @@ void face_layer_did_get_focus(struct FaceLayer *face_layer) {
 }
 
 
-void face_layer_did_lost_focus(struct FaceLayer *face_layer) {
+void face_layer_did_lost_focus(FaceLayer *face_layer) {
 	tick_timer_service_unsubscribe();
 }
 
 
-void face_layer_destroy(struct FaceLayer *face_layer) {
+void face_layer_destroy(FaceLayer *face_layer) {
 	informer_remove_listener(InformerEventTimeTick, face_layer, handle_time_tick_event);
 	informer_remove_listener(InformerEventAccel, face_layer, handle_accel_event);
 

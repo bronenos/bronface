@@ -9,8 +9,8 @@
 
 struct FaceScene {
 	Window *window;
-	struct FaceLayer *face_layer;
-	struct MonthLayer *month_layer;
+	FaceLayer *face_layer;
+	MonthLayer *month_layer;
 };
 
 
@@ -20,7 +20,7 @@ static void handle_window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 	const GRect window_bounds = layer_get_bounds(window_layer);
 
-	struct FaceScene *face_scene = window_get_user_data(window);
+	FaceScene *face_scene = window_get_user_data(window);
 	face_scene->face_layer = face_layer_create(window_bounds);
 	face_scene->month_layer = NULL;
 	layer_add_child(window_layer, face_layer_get_layer(face_scene->face_layer));
@@ -30,7 +30,7 @@ static void handle_window_load(Window *window) {
 
 
 static void handle_window_unload(Window *window) {
-	struct FaceScene *face_scene = window_get_user_data(window);
+	FaceScene *face_scene = window_get_user_data(window);
 
 	if (face_scene->month_layer) {
 		month_layer_did_lost_focus(face_scene->month_layer);
@@ -47,7 +47,7 @@ static void handle_window_unload(Window *window) {
 // events
 
 static void handle_accel_event(void *listener, void *object) {
-	struct FaceScene *face_scene = listener;
+	FaceScene *face_scene = listener;
 	AccelAxisType *axis = (AccelAxisType *) object;
 
 	if (*axis == ACCEL_AXIS_Z) {
@@ -93,8 +93,8 @@ static void handle_timer(void *data) {
 
 // core
 
-struct FaceScene *face_scene_create() {
-	struct FaceScene *face_scene = malloc(sizeof(struct FaceScene));
+FaceScene *face_scene_create() {
+	FaceScene *face_scene = malloc(sizeof(FaceScene));
 
 	face_scene->window = window_create();
 	window_set_user_data(face_scene->window, face_scene);
@@ -115,12 +115,12 @@ struct FaceScene *face_scene_create() {
 }
 
 
-Window *face_scene_get_window(struct FaceScene *face_scene) {
+Window *face_scene_get_window(FaceScene *face_scene) {
 	return face_scene->window;
 }
 
 
-void face_scene_destroy(struct FaceScene *face_scene) {
+void face_scene_destroy(FaceScene *face_scene) {
 	accel_tap_service_unsubscribe();
 
 	informer_remove_listener(InformerEventAccel, face_scene, handle_accel_event);
