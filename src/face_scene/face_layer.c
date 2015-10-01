@@ -384,7 +384,7 @@ FaceLayer *face_layer_create(GRect rect) {
 
 	FaceLayer *face_layer = layer_get_data(layer);
 	face_layer->back_layer = layer;
-	face_layer->show_date = true;
+	face_layer->show_date = false;
 
 	if (persist_exists(PersistDataKeyWatchfaceMode)) {
 		face_layer->dashes_mode = persist_read_int(PersistDataKeyWatchfaceMode);
