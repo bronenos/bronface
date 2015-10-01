@@ -306,22 +306,10 @@ static void draw_time_with_format(FaceLayer *face_layer, GContext *ctx, char *fm
 }
 
 
-static void face_layer_update(Layer *layer, GContext *ctx) {
-	FaceLayer *face_layer = layer_get_data(layer);
+// services
 
-	draw_background(face_layer, ctx);
-	draw_dashes(face_layer, ctx);
-
-	if (face_layer->show_date) {
-		draw_hands(face_layer, ctx, false);
-		draw_time_with_format(face_layer, ctx, "%B", FONT_KEY_GOTHIC_18_BOLD, -31);
-		draw_time_with_format(face_layer, ctx, "%d", FONT_KEY_GOTHIC_28_BOLD, 0);
-		draw_time_with_format(face_layer, ctx, "%A", FONT_KEY_GOTHIC_14, 25);
-	}
-	else {
-		draw_hands(face_layer, ctx, true);
-		draw_center(face_layer, ctx);
-	}
+static void handle_time_tick(tm *time, TimeUnits changed_units) {
+	informer_inform_with_object(InformerEventTimeTick, time);
 }
 
 
@@ -332,7 +320,6 @@ static void handle_time_tick_event(void *listener, void *object) {
 	tm *time = object;
 
 	face_layer->last_time = *time;
-
 	layer_mark_dirty(face_layer->back_layer);
 }
 
@@ -369,18 +356,30 @@ static void handle_battery_event(void *listener, void *object) {
 }
 
 
-// ticks
+// core
 
-static void handle_time_tick(tm *time, TimeUnits changed_units) {
-	informer_inform_with_object(InformerEventTimeTick, time);
+static void face_layer_draw(Layer *layer, GContext *ctx) {
+	FaceLayer *face_layer = layer_get_data(layer);
+
+	draw_background(face_layer, ctx);
+	draw_dashes(face_layer, ctx);
+
+	if (face_layer->show_date) {
+		draw_hands(face_layer, ctx, false);
+		draw_time_with_format(face_layer, ctx, "%B", FONT_KEY_GOTHIC_18_BOLD, -31);
+		draw_time_with_format(face_layer, ctx, "%d", FONT_KEY_GOTHIC_28_BOLD, 0);
+		draw_time_with_format(face_layer, ctx, "%A", FONT_KEY_GOTHIC_14, 25);
+	}
+	else {
+		draw_hands(face_layer, ctx, true);
+		draw_center(face_layer, ctx);
+	}
 }
 
 
-// core
-
 FaceLayer *face_layer_create(GRect rect) {
 	Layer *layer = layer_create_with_data(rect, sizeof(FaceLayer));
-	layer_set_update_proc(layer, face_layer_update);
+	layer_set_update_proc(layer, face_layer_draw);
 
 	FaceLayer *face_layer = layer_get_data(layer);
 	face_layer->back_layer = layer;
