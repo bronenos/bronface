@@ -1,5 +1,6 @@
 #include "face_scene.h"
 #include "face_layer.h"
+#include "date_layer.h"
 #include "informer.h"
 #include "common.h"
 
@@ -9,6 +10,7 @@
 struct FaceScene {
 	Window *window;
 	FaceLayer *face_layer;
+	DateLayer *date_layer;
 };
 
 
@@ -19,19 +21,28 @@ static void handle_window_load(Window *window) {
 	const GRect window_bounds = layer_get_bounds(window_layer);
 
 	FaceScene *face_scene = window_get_user_data(window);
-
 	face_scene->face_layer = face_layer_create(window_bounds);
-	layer_add_child(window_layer, face_layer_get_layer(face_scene->face_layer));
+	face_scene->date_layer = date_layer_create(window_bounds);
 
-	face_layer_got_focus(face_scene->face_layer);
+	layer_add_child(window_layer, date_layer_get_layer(face_scene->date_layer));
+	date_layer_got_focus(face_scene->date_layer);
 }
 
 
 static void handle_window_unload(Window *window) {
 	FaceScene *face_scene = window_get_user_data(window);
 
-	face_layer_lost_focus(face_scene->face_layer);
-	face_layer_destroy(face_scene->face_layer);
+	if (face_scene->date_layer) {
+		date_layer_lost_focus(face_scene->date_layer);
+		date_layer_destroy(face_scene->date_layer);
+		face_scene->date_layer = NULL;
+	}
+
+	if (face_scene->face_layer) {
+		face_layer_lost_focus(face_scene->face_layer);
+		face_layer_destroy(face_scene->face_layer);
+		face_scene->face_layer = NULL;
+	}
 }
 
 
