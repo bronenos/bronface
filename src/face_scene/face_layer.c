@@ -78,54 +78,42 @@ static void subscribe_for_tick(FaceLayer *face_layer) {
 
 static GColor color_for_background() {
 	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
 	colors[DeviceColorBlack]	= GColorBlack;
-	colors[DeviceColorRose]		= GColorMelon;
 	return colors[bk_get_device_color()];
 }
 
 
 static GColor color_for_main_dash() {
 	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
 	colors[DeviceColorBlack]	= GColorLightGray;
-	colors[DeviceColorRose]		= GColorMelon;
 	return colors[bk_get_device_color()];
 }
 
 
 static GColor color_for_regular_dash() {
 	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
 	colors[DeviceColorBlack]	= GColorLightGray;
-	colors[DeviceColorRose]		= GColorMelon;
 	return colors[bk_get_device_color()];
 }
 
 
 static GColor color_for_hour_hand() {
 	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
 	colors[DeviceColorBlack]	= GColorBrass;
-	colors[DeviceColorRose]		= GColorMelon;
 	return colors[bk_get_device_color()];
 }
 
 
 static GColor color_for_minute_hand() {
 	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
 	colors[DeviceColorBlack]	= GColorBrass;
-	colors[DeviceColorRose]		= GColorMelon;
 	return colors[bk_get_device_color()];
 }
 
 
 static GColor color_for_second_hand() {
 	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
 	colors[DeviceColorBlack]	= GColorChromeYellow;
-	colors[DeviceColorRose]		= GColorMelon;
 	return colors[bk_get_device_color()];
 }
 
