@@ -30,6 +30,7 @@ typedef struct AccelParams AccelParams;
 
 
 typedef enum {
+	AppMessageKeyURL,
 	AppMessageKeyPlace,
 	AppMessageKeyTemperature,
 	AppMessageKeyDescription,
@@ -39,6 +40,7 @@ typedef enum {
 
 
 struct WeatherInfo {
+	char url[0xFF];
 	char place[0x40];
 	int16_t temperature;
 	char description[0x20];
@@ -51,5 +53,6 @@ typedef struct WeatherInfo WeatherInfo;
 // funcs
 
 DeviceColor bk_get_device_color();
+GPoint bk_second_point_for_rotation(GPoint center, int16_t length, int16_t angle);
 
 #endif

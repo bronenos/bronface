@@ -10,21 +10,43 @@ struct DateLayer {
 	Layer *back_layer;
 
 	struct tm last_time;
-	WeatherInfo *weather;
+
+	struct {
+		WeatherInfo info;
+		time_t info_time;
+		bool is_waiting;
+		AppTimer *waiting_timer;
+		int16_t waiting_count;
+	} weather;
 };
+
+
+const int16_t kWeatherWaitingStepsNumber	= 100;
+const int16_t kWeatherActualTimeout			= 5 * 60; // 5 mins
+const int16_t kWeatherHideTimeout			= 30 * 60; // 30 mins
 
 
 // internal
 
-static void request_weather_info() {
+static void request_weather_info(DateLayer *date_layer) {
 	DictionaryIterator *iterator;
 	app_message_outbox_begin(&iterator);
-
 	dict_write_uint8(iterator, 0, 0);
-
 	app_message_outbox_send();
 
-	log_verbose("%s -> weather request", __FUNCTION__);
+	date_layer->weather.is_waiting = true;
+	layer_mark_dirty(date_layer->back_layer);
+}
+
+
+// timers
+
+static void handle_refresh_timer(void *data) {
+	DateLayer *date_layer = data;
+
+	date_layer->weather.waiting_timer = NULL;
+
+	layer_mark_dirty(date_layer->back_layer);
 }
 
 
@@ -85,11 +107,11 @@ static void draw_place(DateLayer *date_layer, GContext *ctx) {
 	const GTextAlignment align = GTextAlignmentCenter;
 
 	GRect rect = bounds;
-	rect.origin.y = 90;
-	rect.size.h = graphics_text_layout_get_content_size(date_layer->weather->place, font, bounds, mode, align).h;
+	rect.origin.y = 88;
+	rect.size.h = graphics_text_layout_get_content_size(date_layer->weather.info.place, font, bounds, mode, align).h;
 
 	graphics_context_set_text_color(ctx, GColorWhite);
-	graphics_draw_text(ctx, date_layer->weather->place, font, rect, mode, align, NULL);
+	graphics_draw_text(ctx, date_layer->weather.info.place, font, rect, mode, align, NULL);
 }
 
 
@@ -97,14 +119,14 @@ static void draw_weather(DateLayer *date_layer, GContext *ctx) {
 	const GRect bounds = layer_get_bounds(date_layer->back_layer);
 
 	char deg_text[0x10];
-	snprintf(deg_text, sizeof(deg_text), "%d°", date_layer->weather->temperature);
+	snprintf(deg_text, sizeof(deg_text), "%d°C", date_layer->weather.info.temperature);
 
 	const GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
 	const GTextOverflowMode mode = GTextOverflowModeWordWrap;
 	const GTextAlignment align = GTextAlignmentLeft;
 
 	GRect rect = bounds;
-	rect.origin.x = 20;
+	rect.origin.x = 30;
 	rect.origin.y = 110;
 	rect.size = graphics_text_layout_get_content_size(deg_text, font, bounds, mode, align);
 
@@ -112,9 +134,9 @@ static void draw_weather(DateLayer *date_layer, GContext *ctx) {
 	graphics_draw_text(ctx, deg_text, font, rect, mode, align, NULL);
 
 	rect.origin.y += rect.size.h + 2;
-	rect.size = graphics_text_layout_get_content_size(date_layer->weather->description, font, bounds, mode, align);
+	rect.size = graphics_text_layout_get_content_size(date_layer->weather.info.description, font, bounds, mode, align);
 
-	graphics_draw_text(ctx, date_layer->weather->description, font, rect, mode, align, NULL);
+	graphics_draw_text(ctx, date_layer->weather.info.description, font, rect, mode, align, NULL);
 }
 
 
@@ -122,8 +144,8 @@ static void draw_atmosphere(DateLayer *date_layer, GContext *ctx) {
 	const GRect bounds = layer_get_bounds(date_layer->back_layer);
 
 	char press_text[0x10], humid_text[0x10];
-	snprintf(press_text, sizeof(press_text), "%dmm", date_layer->weather->pressure);
-	snprintf(humid_text, sizeof(humid_text), "%d%%", date_layer->weather->humidity);
+	snprintf(press_text, sizeof(press_text), "%dmm", date_layer->weather.info.pressure);
+	snprintf(humid_text, sizeof(humid_text), "%d%%", date_layer->weather.info.humidity);
 
 	const GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
 	const GTextOverflowMode mode = GTextOverflowModeWordWrap;
@@ -131,7 +153,7 @@ static void draw_atmosphere(DateLayer *date_layer, GContext *ctx) {
 
 	GRect rect = bounds;
 	rect.size.h = graphics_text_layout_get_content_size(press_text, font, bounds, mode, align).h;
-	rect.origin.x = bounds.size.w - rect.size.w - 20;
+	rect.origin.x = bounds.size.w - rect.size.w - 30;
 	rect.origin.y = 110;
 
 	graphics_context_set_text_color(ctx, GColorWhite);
@@ -144,10 +166,32 @@ static void draw_atmosphere(DateLayer *date_layer, GContext *ctx) {
 }
 
 
+static void draw_waiting(DateLayer *date_layer, GContext *ctx) {
+	const GRect bounds = layer_get_bounds(date_layer->back_layer);
+	const GPoint center = grect_center_point(&bounds);
+
+	const int16_t common_offset = TRIG_MAX_ANGLE * date_layer->weather.waiting_count / kWeatherWaitingStepsNumber;
+	const int16_t angle_points = 2;
+	const int16_t angle_step = TRIG_MAX_ANGLE / angle_points;
+
+	for (int16_t i=0; i<angle_points; i++) {
+		const int16_t angle = common_offset + (i * angle_step);
+		const GPoint point = bk_second_point_for_rotation(center, center.y, angle);
+
+		graphics_context_set_fill_color(ctx, GColorWhite);
+		graphics_fill_circle(ctx, point, 1);
+	}
+
+	if (date_layer->weather.waiting_count++ > kWeatherWaitingStepsNumber) {
+		date_layer->weather.waiting_count -= kWeatherWaitingStepsNumber;
+	}
+}
+
+
 // services
 
 static void handle_date_tick(struct tm *time, TimeUnits changed_units) {
-	informer_inform_with_object(InformerEventTimeTick, time);
+	informer_inform_with_object(InformerEventDateTick, time);
 }
 
 
@@ -158,6 +202,25 @@ static void handle_date_tick_event(void *listener, void *object) {
 	struct tm *time = object;
 
 	date_layer->last_time = *time;
+
+	layer_mark_dirty(date_layer->back_layer);
+}
+
+
+static void handle_weather_event(void *listener, void *object) {
+	DateLayer *date_layer = listener;
+	WeatherInfo *weather = object;
+
+	strcpy(date_layer->weather.info.url, weather->url);
+	strcpy(date_layer->weather.info.place, weather->place);
+	date_layer->weather.info.temperature = weather->temperature;
+	strcpy(date_layer->weather.info.description, weather->description);
+	date_layer->weather.info.pressure = weather->pressure;
+	date_layer->weather.info.humidity = weather->humidity;
+
+	date_layer->weather.info_time = time(NULL);
+	date_layer->weather.is_waiting = false;
+
 	layer_mark_dirty(date_layer->back_layer);
 }
 
@@ -171,10 +234,15 @@ static void date_layer_draw(Layer *layer, GContext *ctx) {
 	draw_day_month(date_layer, ctx);
 	draw_weekday(date_layer, ctx);
 
-	if (date_layer->weather) {
+	if (time(NULL) - date_layer->weather.info_time < kWeatherHideTimeout) {
 		draw_place(date_layer, ctx);
 		draw_weather(date_layer, ctx);
 		draw_atmosphere(date_layer, ctx);
+	}
+
+	if (date_layer->weather.is_waiting) {
+		draw_waiting(date_layer, ctx);
+		date_layer->weather.waiting_timer = app_timer_register(100, handle_refresh_timer, date_layer);
 	}
 }
 
@@ -185,13 +253,7 @@ DateLayer *date_layer_create(GRect rect) {
 
 	DateLayer *date_layer = layer_get_data(layer);
 	date_layer->back_layer = layer;
-	date_layer->weather = malloc(sizeof(WeatherInfo));
-
-	strcpy(date_layer->weather->place, "Strogino");
-	date_layer->weather->temperature = 9;
-	strcpy(date_layer->weather->description, "Clouds");
-	date_layer->weather->pressure = 755;
-	date_layer->weather->humidity = 41;
+	memset(&date_layer->weather, 0, sizeof(date_layer->weather));
 
 	return date_layer;
 }
@@ -207,25 +269,29 @@ void date_layer_got_focus(DateLayer *date_layer) {
 	date_layer->last_time = *localtime(&t);
 	layer_mark_dirty(date_layer->back_layer);
 
-	informer_add_listener(InformerEventTimeTick, date_layer, handle_date_tick_event);
+	informer_add_listener(InformerEventDateTick, date_layer, handle_date_tick_event);
+	informer_add_listener(InformerEventWeather, date_layer, handle_weather_event);
 
 	tick_timer_service_subscribe(DAY_UNIT, handle_date_tick);
 
-	request_weather_info();
+	if (time(NULL) - date_layer->weather.info_time > kWeatherActualTimeout) {
+		request_weather_info(date_layer);
+	}
 }
 
 
 void date_layer_lost_focus(DateLayer *date_layer) {
 	tick_timer_service_unsubscribe();
 
-	informer_remove_listener(InformerEventTimeTick, date_layer, handle_date_tick_event);
+	informer_remove_listener(InformerEventDateTick, date_layer, handle_date_tick_event);
+	informer_remove_listener(InformerEventWeather, date_layer, handle_weather_event);
 }
 
 
 void date_layer_destroy(DateLayer *date_layer) {
-	if (date_layer->weather) {
-		free(date_layer->weather);
-		date_layer->weather = NULL;
+	if (date_layer->weather.waiting_timer) {
+		app_timer_cancel(date_layer->weather.waiting_timer);
+		date_layer->weather.waiting_timer = NULL;
 	}
 
 	layer_destroy(date_layer->back_layer);

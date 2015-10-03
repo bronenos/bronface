@@ -5,8 +5,9 @@
 
 enum InformerEvent {
 	InformerEventTimeTick,
-	InformerEventDayTick,
-	InformerEventAccel,
+	InformerEventDateTick,
+	InformerEventAccelTap,
+	InformerEventAccelData,
 	InformerEventBattery,
 	InformerEventWeather,
 };

@@ -24,7 +24,7 @@ static void app_message_inbox_received_callback(DictionaryIterator *iterator, vo
 			break;
 
 		case AppMessageKeyTemperature:
-			info->temperature = item->value->int32;
+			info->temperature = item->value->int32 - 273.15f;
 			break;
 			
 		case AppMessageKeyDescription:
@@ -32,7 +32,7 @@ static void app_message_inbox_received_callback(DictionaryIterator *iterator, vo
 			break;
 			
 		case AppMessageKeyPressure:
-			info->pressure = item->value->int32;
+			info->pressure = item->value->int32 * 0.75006375541921f;
 			break;
 			
 		case AppMessageKeyHumidity:

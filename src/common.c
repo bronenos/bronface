@@ -19,3 +19,11 @@ DeviceColor bk_get_device_color() {
 
 	abort();
 }
+
+
+GPoint bk_second_point_for_rotation(GPoint center, int16_t length, int16_t angle) {
+	GPoint point;
+	point.x = center.x + (length * sin_lookup(angle) / TRIG_MAX_RATIO);
+	point.y = center.y + (length * -cos_lookup(angle) / TRIG_MAX_RATIO);
+	return point;
+}

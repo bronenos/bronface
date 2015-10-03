@@ -6,12 +6,21 @@
   "versionLabel": "1.0",
   "sdkVersion": "3",
   "targetPlatforms": ["chalk"],
+  "projectType": "native",
   "watchapp": {
     "watchface": true
   },
   "appKeys": {
-    "dummy": 0
+    "AppMessageKeyURL": 0,
+    "AppMessageKeyPlace": 1,
+    "AppMessageKeyTemperature": 2,
+    "AppMessageKeyDescription": 3,
+    "AppMessageKeyPressure": 4,
+    "AppMessageKeyHumidity": 5
   },
+  "capabilities": [
+    "location"
+  ],
   "resources": {
     "media": []
   }

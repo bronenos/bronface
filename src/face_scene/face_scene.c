@@ -11,10 +11,75 @@ struct FaceScene {
 	Window *window;
 	FaceLayer *face_layer;
 	DateLayer *date_layer;
+
+	struct {
+		bool has_data;
+		int16_t last_y;
+		int16_t skip_samples;
+	} accel;
 };
 
 
-// window
+// events
+
+static void handle_accel_data_event(void *listener, void *object) {
+	FaceScene *face_scene = listener;
+	AccelData *data = object;
+
+	if (face_scene->accel.skip_samples) {
+		face_scene->accel.skip_samples--;
+		face_scene->accel.last_y = data->y;
+		return;
+	}
+
+	// log_verbose("accel new(%d) vs old(%d) :: diff(%d)",
+	// 	data->y,
+	// 	face_scene->accel.last_y,
+	// 	abs(data->y - face_scene->accel.last_y));
+
+	if (face_scene->accel.has_data) {
+		if (abs(data->y - face_scene->accel.last_y) > 300) {
+			Layer *window_layer = window_get_root_layer(face_scene->window);
+			Layer *layer = date_layer_get_layer(face_scene->date_layer);
+
+			if (layer_get_window(layer)) {
+				date_layer_lost_focus(face_scene->date_layer);
+				layer_remove_from_parent(layer);
+				face_layer_got_focus(face_scene->face_layer);
+			}
+			else {
+				face_layer_lost_focus(face_scene->face_layer);
+				layer_add_child(window_layer, layer);
+				date_layer_got_focus(face_scene->date_layer);
+			}
+
+			face_scene->accel.skip_samples = 10;
+		}
+	}
+
+	face_scene->accel.last_y = data->y;
+	face_scene->accel.has_data = true;
+}
+
+
+// services
+
+static void handle_battery_state(BatteryChargeState battery) {
+	informer_inform_with_object(InformerEventBattery, &battery);
+}
+
+
+static void handle_accel_tap(AccelAxisType axis, int32_t direction) {
+	informer_inform_with_object(InformerEventAccelTap, &axis);
+}
+
+
+static void handle_accel_data(AccelData *data, uint32_t num_samples) {
+	informer_inform_with_object(InformerEventAccelData, data);
+}
+
+
+// core
 
 static void handle_window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
@@ -24,8 +89,8 @@ static void handle_window_load(Window *window) {
 	face_scene->face_layer = face_layer_create(window_bounds);
 	face_scene->date_layer = date_layer_create(window_bounds);
 
-	layer_add_child(window_layer, date_layer_get_layer(face_scene->date_layer));
-	date_layer_got_focus(face_scene->date_layer);
+	layer_add_child(window_layer, face_layer_get_layer(face_scene->face_layer));
+	face_layer_got_focus(face_scene->face_layer);
 }
 
 
@@ -46,26 +111,13 @@ static void handle_window_unload(Window *window) {
 }
 
 
-// services
-
-static void handle_battery_state(BatteryChargeState battery) {
-	informer_inform_with_object(InformerEventBattery, &battery);
-}
-
-
-static void handle_accel_tap(AccelAxisType axis, int32_t direction) {
-	informer_inform_with_object(InformerEventAccel, &axis);
-}
-
-
-// core
-
 FaceScene *face_scene_create() {
 	FaceScene *face_scene = malloc(sizeof(FaceScene));
 
 	face_scene->window = window_create();
-	window_set_user_data(face_scene->window, face_scene);
+	memset(&face_scene->accel, 0, sizeof(face_scene->accel));
 
+	window_set_user_data(face_scene->window, face_scene);
 	window_set_window_handlers(face_scene->window, (WindowHandlers) {
 		.load = handle_window_load,
 		.unload = handle_window_unload
@@ -81,14 +133,20 @@ Window *face_scene_get_window(FaceScene *face_scene) {
 
 
 void face_scene_got_focus(FaceScene *face_scene) {
+	informer_add_listener(InformerEventAccelData, face_scene, handle_accel_data_event);
+
 	battery_state_service_subscribe(handle_battery_state);
 	accel_tap_service_subscribe(handle_accel_tap);
+	accel_data_service_subscribe(2, handle_accel_data);
 }
 
 
 void face_scene_lost_focus(FaceScene *face_scene) {
+	accel_data_service_unsubscribe();
 	accel_tap_service_unsubscribe();
 	battery_state_service_unsubscribe();
+
+	informer_remove_listener(InformerEventAccelData, face_scene, handle_accel_data_event);
 }
 
 
