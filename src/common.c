@@ -3,6 +3,8 @@
 
 
 DeviceColor bk_get_device_color() {
+	return DeviceColorBlack;
+	
 	switch (watch_info_get_color()) {
 	case WATCH_INFO_COLOR_TIME_ROUND_SILVER_14:
 	case WATCH_INFO_COLOR_TIME_ROUND_SILVER_20:

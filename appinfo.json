@@ -5,7 +5,7 @@
   "companyName": "bronenos",
   "versionLabel": "1.0",
   "sdkVersion": "3",
-  "targetPlatforms": ["aplite", "basalt", "chalk"],
+  "targetPlatforms": ["chalk"],
   "watchapp": {
     "watchface": true
   },

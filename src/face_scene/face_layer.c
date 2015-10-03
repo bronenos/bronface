@@ -76,66 +76,12 @@ static void subscribe_for_tick(FaceLayer *face_layer) {
 }
 
 
-static GColor color_for_background() {
-	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
-	colors[DeviceColorBlack]	= GColorBlack;
-	colors[DeviceColorRose]		= GColorMelon;
-	return colors[bk_get_device_color()];
-}
-
-
-static GColor color_for_main_dash() {
-	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
-	colors[DeviceColorBlack]	= GColorLightGray;
-	colors[DeviceColorRose]		= GColorMelon;
-	return colors[bk_get_device_color()];
-}
-
-
-static GColor color_for_regular_dash() {
-	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
-	colors[DeviceColorBlack]	= GColorLightGray;
-	colors[DeviceColorRose]		= GColorMelon;
-	return colors[bk_get_device_color()];
-}
-
-
-static GColor color_for_hour_hand() {
-	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
-	colors[DeviceColorBlack]	= GColorBrass;
-	colors[DeviceColorRose]		= GColorMelon;
-	return colors[bk_get_device_color()];
-}
-
-
-static GColor color_for_minute_hand() {
-	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
-	colors[DeviceColorBlack]	= GColorBrass;
-	colors[DeviceColorRose]		= GColorMelon;
-	return colors[bk_get_device_color()];
-}
-
-
-static GColor color_for_second_hand() {
-	GColor colors[DeviceColor_Count];
-	colors[DeviceColorSilver]	= GColorWhite;
-	colors[DeviceColorBlack]	= GColorChromeYellow;
-	colors[DeviceColorRose]		= GColorMelon;
-	return colors[bk_get_device_color()];
-}
-
-
 // drawing
 
 static void draw_background(FaceLayer *face_layer, GContext *ctx) {
 	const GRect bounds = layer_get_bounds(face_layer->back_layer);
 
-	graphics_context_set_fill_color(ctx, color_for_background());
+	graphics_context_set_fill_color(ctx, GColorBlack);
 	graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 }
 
@@ -157,11 +103,11 @@ static void draw_dashes(FaceLayer *face_layer, GContext *ctx) {
 				const GPoint point_to = face_layer_second_point_for_rotation(center, center.y - 10, angle);
 				const GPoint point_inner = face_layer_second_point_for_rotation(center, center.y - 6, angle);
 
-				graphics_context_set_stroke_color(ctx, color_for_main_dash());
+				graphics_context_set_stroke_color(ctx, GColorLightGray);
 				graphics_context_set_stroke_width(ctx, 9);
 				graphics_draw_line(ctx, point_from, point_to);
 
-				graphics_context_set_stroke_color(ctx, color_for_background());
+				graphics_context_set_stroke_color(ctx, GColorBlack);
 				graphics_context_set_stroke_width(ctx, 3);
 				graphics_draw_line(ctx, point_inner, point_to);
 
@@ -173,7 +119,7 @@ static void draw_dashes(FaceLayer *face_layer, GContext *ctx) {
 				const GPoint point_from = face_layer_second_point_for_rotation(center, center.y, angle);
 				const GPoint point_to = face_layer_second_point_for_rotation(center, center.y - 7, angle);
 
-				graphics_context_set_stroke_color(ctx, color_for_regular_dash());
+				graphics_context_set_stroke_color(ctx, GColorLightGray);
 				graphics_context_set_stroke_width(ctx, 2);
 				graphics_draw_line(ctx, point_from, point_to);
 
@@ -184,7 +130,7 @@ static void draw_dashes(FaceLayer *face_layer, GContext *ctx) {
 			if (is_regular_dash && (face_layer->dashes_mode > FaceLayerDashesModeMain)) {
 				const GPoint point = face_layer_second_point_for_rotation(center, center.y, angle);
 
-				graphics_context_set_fill_color(ctx, color_for_regular_dash());
+				graphics_context_set_fill_color(ctx, GColorLightGray);
 				graphics_fill_circle(ctx, point, 1);
 
 				continue;
@@ -205,25 +151,25 @@ static void draw_hands(FaceLayer *face_layer, GContext *ctx, bool full_mode) {
 		const GPoint minute_outer_point = face_layer_second_point_for_rotation(center, 62, minute_angle);
 		const GPoint minute_inner_point = face_layer_second_point_for_rotation(center, 14, minute_angle);
 
-		graphics_context_set_stroke_color(ctx, color_for_minute_hand());
+		graphics_context_set_stroke_color(ctx, GColorBrass);
 		graphics_context_set_stroke_width(ctx, 1);
 		graphics_draw_line(ctx, center, minute_outer_point);
 
-		graphics_context_set_stroke_color(ctx, color_for_minute_hand());
+		graphics_context_set_stroke_color(ctx, GColorBrass);
 		graphics_context_set_stroke_width(ctx, 6);
 		graphics_draw_line(ctx, minute_inner_point, minute_outer_point);
 
-		graphics_context_set_stroke_color(ctx, color_for_background());
+		graphics_context_set_stroke_color(ctx, GColorBlack);
 		graphics_context_set_stroke_width(ctx, 2);
 		graphics_draw_line(ctx, minute_inner_point, minute_outer_point);
 	}
 	else {
 		const GPoint minute_point = face_layer_second_point_for_rotation(center, compact_distance, minute_angle);
 
-		graphics_context_set_fill_color(ctx, color_for_minute_hand());
+		graphics_context_set_fill_color(ctx, GColorBrass);
 		graphics_fill_circle(ctx, minute_point, 4);
 
-		graphics_context_set_fill_color(ctx, color_for_background());
+		graphics_context_set_fill_color(ctx, GColorBlack);
 		graphics_fill_circle(ctx, minute_point, 2);
 	}
 
@@ -233,18 +179,18 @@ static void draw_hands(FaceLayer *face_layer, GContext *ctx, bool full_mode) {
 		const GPoint hour_outer_point = face_layer_second_point_for_rotation(center, 45, hour_angle);
 		const GPoint hour_inner_point = face_layer_second_point_for_rotation(center, 14, hour_angle);
 
-		graphics_context_set_stroke_color(ctx, color_for_hour_hand());
+		graphics_context_set_stroke_color(ctx, GColorBrass);
 		graphics_context_set_stroke_width(ctx, 1);
 		graphics_draw_line(ctx, center, hour_outer_point);
 
-		graphics_context_set_stroke_color(ctx, color_for_hour_hand());
+		graphics_context_set_stroke_color(ctx, GColorBrass);
 		graphics_context_set_stroke_width(ctx, 5);
 		graphics_draw_line(ctx, hour_inner_point, hour_outer_point);
 	}
 	else {
 		const GPoint hour_point = face_layer_second_point_for_rotation(center, compact_distance, hour_angle);
 
-		graphics_context_set_fill_color(ctx, color_for_hour_hand());
+		graphics_context_set_fill_color(ctx, GColorBrass);
 		graphics_fill_circle(ctx, hour_point, 4);
 	}
 
@@ -254,14 +200,14 @@ static void draw_hands(FaceLayer *face_layer, GContext *ctx, bool full_mode) {
 		if (full_mode) {
 			const GPoint second_point = face_layer_second_point_for_rotation(center, 72, second_angle);
 
-			graphics_context_set_stroke_color(ctx, color_for_second_hand());
+			graphics_context_set_stroke_color(ctx, GColorChromeYellow);
 			graphics_context_set_stroke_width(ctx, 1);
 			graphics_draw_line(ctx, center, second_point);
 		}
 		else {
 			const GPoint second_point = face_layer_second_point_for_rotation(center, compact_distance, second_angle);
 
-			graphics_context_set_fill_color(ctx, color_for_second_hand());
+			graphics_context_set_fill_color(ctx, GColorChromeYellow);
 			graphics_fill_circle(ctx, second_point, 2);
 		}
 	}
@@ -279,7 +225,7 @@ static void draw_center(FaceLayer *face_layer, GContext *ctx) {
 		graphics_context_set_fill_color(ctx, GColorFolly);
 	}
 	else {
-		graphics_context_set_fill_color(ctx, color_for_second_hand());
+		graphics_context_set_fill_color(ctx, GColorChromeYellow);
 	}
 
 	graphics_fill_circle(ctx, center, 4);
