@@ -8,25 +8,44 @@
 
 // types
 
-enum DeviceColor {
+typedef enum {
 	DeviceColorSilver,
 	DeviceColorBlack,
 	DeviceColorRose,
 	DeviceColor_Count,
-};
-typedef enum DeviceColor DeviceColor;
+} DeviceColor;
 
-enum PersistDataKey {
+
+typedef enum {
 	PersistDataKeyWatchfaceMode,
 	PersistDataKeySecondsActive,
-};
-typedef enum PersistDataKey PersistDataKey;
+} PersistDataKey;
+
 
 struct AccelParams {
 	AccelAxisType axis;
 	int32_t direction;
 };
 typedef struct AccelParams AccelParams;
+
+
+typedef enum {
+	AppMessageKeyPlace,
+	AppMessageKeyTemperature,
+	AppMessageKeyDescription,
+	AppMessageKeyPressure,
+	AppMessageKeyHumidity,
+} AppMessageKey;
+
+
+struct WeatherInfo {
+	char place[0x40];
+	int16_t temperature;
+	char description[0x20];
+	int16_t pressure;
+	int16_t humidity;
+};
+typedef struct WeatherInfo WeatherInfo;
 
 
 // funcs
