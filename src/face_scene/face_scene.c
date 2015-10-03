@@ -16,8 +16,25 @@ struct FaceScene {
 		bool has_data;
 		int16_t last_y;
 		int16_t skip_samples;
+		AppTimer *back_timer;
 	} accel;
 };
+
+
+// timers
+
+static void handle_back_timer(void *data) {
+	FaceScene *face_scene = data;
+
+	Layer *window_layer = window_get_root_layer(face_scene->window);
+	Layer *layer = date_layer_get_layer(face_scene->date_layer);
+
+	date_layer_lost_focus(face_scene->date_layer);
+	layer_remove_from_parent(layer);
+	face_layer_got_focus(face_scene->face_layer);
+
+	face_scene->accel.back_timer = NULL;
+}
 
 
 // events
@@ -32,15 +49,15 @@ static void handle_accel_data_event(void *listener, void *object) {
 		return;
 	}
 
-	// log_verbose("accel new(%d) vs old(%d) :: diff(%d)",
-	// 	data->y,
-	// 	face_scene->accel.last_y,
-	// 	abs(data->y - face_scene->accel.last_y));
-
 	if (face_scene->accel.has_data) {
 		if (abs(data->y - face_scene->accel.last_y) > 300) {
 			Layer *window_layer = window_get_root_layer(face_scene->window);
 			Layer *layer = date_layer_get_layer(face_scene->date_layer);
+
+			if (face_scene->accel.back_timer) {
+				app_timer_cancel(face_scene->accel.back_timer);
+				face_scene->accel.back_timer = NULL;
+			}
 
 			if (layer_get_window(layer)) {
 				date_layer_lost_focus(face_scene->date_layer);
@@ -51,6 +68,8 @@ static void handle_accel_data_event(void *listener, void *object) {
 				face_layer_lost_focus(face_scene->face_layer);
 				layer_add_child(window_layer, layer);
 				date_layer_got_focus(face_scene->date_layer);
+
+				face_scene->accel.back_timer = app_timer_register(7500, handle_back_timer, face_scene);
 			}
 
 			face_scene->accel.skip_samples = 10;
@@ -142,6 +161,11 @@ void face_scene_got_focus(FaceScene *face_scene) {
 
 
 void face_scene_lost_focus(FaceScene *face_scene) {
+	if (face_scene->accel.back_timer) {
+		app_timer_cancel(face_scene->accel.back_timer);
+		face_scene->accel.back_timer = NULL;
+	}
+
 	accel_data_service_unsubscribe();
 	accel_tap_service_unsubscribe();
 	battery_state_service_unsubscribe();
