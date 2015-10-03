@@ -9,7 +9,7 @@
 struct DateLayer {
 	Layer *back_layer;
 
-	tm last_time;
+	struct tm last_time;
 	WeatherInfo *weather;
 };
 
@@ -146,7 +146,7 @@ static void draw_atmosphere(DateLayer *date_layer, GContext *ctx) {
 
 // services
 
-static void handle_date_tick(tm *time, TimeUnits changed_units) {
+static void handle_date_tick(struct tm *time, TimeUnits changed_units) {
 	informer_inform_with_object(InformerEventTimeTick, time);
 }
 
@@ -155,7 +155,7 @@ static void handle_date_tick(tm *time, TimeUnits changed_units) {
 
 static void handle_date_tick_event(void *listener, void *object) {
 	DateLayer *date_layer = listener;
-	tm *time = object;
+	struct tm *time = object;
 
 	date_layer->last_time = *time;
 	layer_mark_dirty(date_layer->back_layer);

@@ -17,7 +17,7 @@ typedef enum {
 struct FaceLayer {
 	Layer *back_layer;
 
-	tm last_time;
+	struct tm last_time;
 	BatteryChargeState last_battery;
 
 	FaceLayerDashesMode dashes_mode;
@@ -38,7 +38,7 @@ const int16_t	kFaceLayerMainInterval		= 15;
 // forward
 
 static void subscribe_for_tick(FaceLayer *face_layer);
-static void handle_time_tick(tm *time, TimeUnits changed_units);
+static void handle_time_tick(struct tm *time, TimeUnits changed_units);
 
 
 // internal
@@ -308,7 +308,7 @@ static void draw_time_with_format(FaceLayer *face_layer, GContext *ctx, char *fm
 
 // services
 
-static void handle_time_tick(tm *time, TimeUnits changed_units) {
+static void handle_time_tick(struct tm *time, TimeUnits changed_units) {
 	informer_inform_with_object(InformerEventTimeTick, time);
 }
 
@@ -317,7 +317,7 @@ static void handle_time_tick(tm *time, TimeUnits changed_units) {
 
 static void handle_time_tick_event(void *listener, void *object) {
 	FaceLayer *face_layer = listener;
-	tm *time = object;
+	struct tm *time = object;
 
 	face_layer->last_time = *time;
 	layer_mark_dirty(face_layer->back_layer);
