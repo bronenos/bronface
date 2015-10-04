@@ -21,6 +21,9 @@ struct FaceScene {
 };
 
 
+const int16_t kFaceSceneSwitchStrength	= 750;	
+
+
 // timers
 
 static void handle_back_timer(void *data) {
@@ -50,7 +53,7 @@ static void handle_accel_data_event(void *listener, void *object) {
 	}
 
 	if (face_scene->accel.has_data) {
-		if (abs(data->y - face_scene->accel.last_y) > 300) {
+		if (abs(data->y - face_scene->accel.last_y) > kFaceSceneSwitchStrength) {
 			Layer *window_layer = window_get_root_layer(face_scene->window);
 			Layer *layer = date_layer_get_layer(face_scene->date_layer);
 

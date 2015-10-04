@@ -110,7 +110,7 @@ static void draw_place(DateLayer *date_layer, GContext *ctx) {
 	rect.origin.y = 88;
 	rect.size.h = graphics_text_layout_get_content_size(date_layer->weather.info.place, font, bounds, mode, align).h;
 
-	graphics_context_set_text_color(ctx, GColorWhite);
+	graphics_context_set_text_color(ctx, GColorBrass);
 	graphics_draw_text(ctx, date_layer->weather.info.place, font, rect, mode, align, NULL);
 }
 
@@ -130,7 +130,7 @@ static void draw_weather(DateLayer *date_layer, GContext *ctx) {
 	rect.origin.y = 110;
 	rect.size = graphics_text_layout_get_content_size(deg_text, font, bounds, mode, align);
 
-	graphics_context_set_text_color(ctx, GColorWhite);
+	graphics_context_set_text_color(ctx, GColorBrass);
 	graphics_draw_text(ctx, deg_text, font, rect, mode, align, NULL);
 
 	rect.origin.y += rect.size.h + 2;
@@ -156,7 +156,7 @@ static void draw_atmosphere(DateLayer *date_layer, GContext *ctx) {
 	rect.origin.x = bounds.size.w - rect.size.w - 30;
 	rect.origin.y = 110;
 
-	graphics_context_set_text_color(ctx, GColorWhite);
+	graphics_context_set_text_color(ctx, GColorBrass);
 	graphics_draw_text(ctx, press_text, font, rect, mode, align, NULL);
 
 	rect.size.h = graphics_text_layout_get_content_size(humid_text, font, bounds, mode, align).h;
@@ -178,7 +178,7 @@ static void draw_waiting(DateLayer *date_layer, GContext *ctx) {
 		const int16_t angle = common_offset + (i * angle_step);
 		const GPoint point = bk_second_point_for_rotation(center, center.y, angle);
 
-		graphics_context_set_fill_color(ctx, GColorWhite);
+		graphics_context_set_fill_color(ctx, GColorBrass);
 		graphics_fill_circle(ctx, point, 1);
 	}
 
