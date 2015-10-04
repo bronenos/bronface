@@ -5,11 +5,13 @@
 
 enum InformerEvent {
 	InformerEventTimeTick,
-	InformerEventUpClick,
-	InformerEventUpLongClick,
-	InformerEventDownLongClick,
-	InformerEventDayTick,
+	InformerEventDateTick,
+	InformerEventAccelTap,
+	InformerEventAccelData,
+	InformerEventBattery,
+	InformerEventWeather,
 };
+typedef enum InformerEvent InformerEvent;
 
 
 typedef void(*InformerCallback)(void *listener, void *object);
@@ -17,8 +19,8 @@ typedef void(*InformerCallback)(void *listener, void *object);
 
 // core
 
-void informer_add_listener(enum InformerEvent event, void *listener, InformerCallback callback);
-void informer_remove_listener(enum InformerEvent event, void *listener, InformerCallback callback);
-void informer_inform_with_object(enum InformerEvent event, void *object);
+void informer_add_listener(InformerEvent event, void *listener, InformerCallback callback);
+void informer_remove_listener(InformerEvent event, void *listener, InformerCallback callback);
+void informer_inform_with_object(InformerEvent event, void *object);
 
 #endif
